@@ -36,8 +36,7 @@ def compare(
     accuracy_status = "PASS" if accuracy_delta >= -accuracy_threshold else "FAIL"
     if accuracy_status == "FAIL":
         failures.append(
-            f"Accuracy dropped {abs(accuracy_delta):.1f} points "
-            f"(threshold: {accuracy_threshold})"
+            f"Accuracy dropped {abs(accuracy_delta):.1f} points (threshold: {accuracy_threshold})"
         )
     rows.append(
         f"| Overall accuracy | {baseline.overall_accuracy:.1f}% | "

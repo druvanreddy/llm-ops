@@ -1,4 +1,5 @@
 """Tests for src/eval/harness.py — golden set loading and percentile calculation."""
+
 from __future__ import annotations
 
 import json
@@ -91,11 +92,13 @@ class TestLoadGoldenSet:
         golden_dir.mkdir()
         test_file = golden_dir / "test.jsonl"
         test_file.write_text(
-            json.dumps({
-                "ticket_text": "Test ticket text for eval",
-                "expected": {"category": "billing", "priority": "high"},
-                "id": "custom_1",
-            })
+            json.dumps(
+                {
+                    "ticket_text": "Test ticket text for eval",
+                    "expected": {"category": "billing", "priority": "high"},
+                    "id": "custom_1",
+                }
+            )
             + "\n"
         )
         settings.golden_set_path = str(golden_dir)

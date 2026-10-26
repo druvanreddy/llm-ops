@@ -120,16 +120,12 @@ class EvalHarness:
         accuracy_by_field: dict[str, float] = {}
         for field in self.EXACT_MATCH_FIELDS:
             matches = [
-                r["field_matches"].get(field, False)
-                for r in results
-                if field in r["field_matches"]
+                r["field_matches"].get(field, False) for r in results if field in r["field_matches"]
             ]
             if matches:
                 accuracy_by_field[field] = sum(matches) / len(matches) * 100
 
-        overall_accuracy = (
-            statistics.mean(accuracy_by_field.values()) if accuracy_by_field else 0.0
-        )
+        overall_accuracy = statistics.mean(accuracy_by_field.values()) if accuracy_by_field else 0.0
 
         schema_valid_rate = (
             (schema_valid_first + schema_valid_repair) / total * 100 if total > 0 else 0.0

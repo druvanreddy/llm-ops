@@ -3,6 +3,7 @@
 Usage:
     python -m scripts.compare_eval --baseline results/baseline.json --current results/current.json
 """
+
 from __future__ import annotations
 
 import argparse
