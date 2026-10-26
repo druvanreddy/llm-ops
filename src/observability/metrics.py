@@ -58,7 +58,11 @@ class LLMMetrics:
         )
 
     def record_request(
-        self, status: str, model: str, prompt_version: str, duration_s: float,
+        self,
+        status: str,
+        model: str,
+        prompt_version: str,
+        duration_s: float,
     ) -> None:
         self.requests_total.labels(status=status, model=model, prompt_version=prompt_version).inc()
         self.request_duration.labels(model=model).observe(duration_s)

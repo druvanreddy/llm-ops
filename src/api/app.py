@@ -144,7 +144,8 @@ async def health(settings: Settings = Depends(get_settings)) -> HealthResponse: 
 
 @app.get("/readyz", response_model=ReadinessResponse, tags=["ops"])
 async def readiness(
-    request: Request, settings: Settings = Depends(get_settings)  # noqa: B008
+    request: Request,
+    settings: Settings = Depends(get_settings),  # noqa: B008
 ) -> ReadinessResponse:
     checks: dict[str, bool] = {}
 

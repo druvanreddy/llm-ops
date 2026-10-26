@@ -1,4 +1,5 @@
 """Tests for src/core/database.py — CRUD operations, analytics, escalation rules."""
+
 from __future__ import annotations
 
 import json
@@ -208,8 +209,16 @@ class TestEscalationRules:
 
 
 class TestAnalytics:
-    def _insert_with_result(self, category="billing", priority="high", severity="major",
-                            intent="get_help", confidence=0.85, latency=100, cost=0.001):
+    def _insert_with_result(
+        self,
+        category="billing",
+        priority="high",
+        severity="major",
+        intent="get_help",
+        confidence=0.85,
+        latency=100,
+        cost=0.001,
+    ):
         result = {
             "result": {
                 "category": category,

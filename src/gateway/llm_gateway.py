@@ -135,9 +135,7 @@ class LLMGateway:
                 repair_attempted = True
             else:
                 self._metrics.record_error("schema_fail")
-                raise ValueError(
-                    f"Failed to parse LLM output after repair: {raw_content[:200]}"
-                )
+                raise ValueError(f"Failed to parse LLM output after repair: {raw_content[:200]}")
 
         provider = target_model.split("/")[0] if "/" in target_model else "openai"
         if "claude" in target_model or "anthropic" in target_model:

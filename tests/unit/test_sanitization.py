@@ -1,4 +1,5 @@
 """Tests for prompt injection sanitization in src/api/triage.py."""
+
 from __future__ import annotations
 
 from src.api.triage import _sanitize_input

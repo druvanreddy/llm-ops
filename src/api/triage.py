@@ -113,9 +113,7 @@ class TriageService:
             self._metrics.record_cost(call_result.cost_usd, call_result.model)
 
             if call_result.fallback_used:
-                self._metrics.record_fallback(
-                    self._settings.primary_model, call_result.model
-                )
+                self._metrics.record_fallback(self._settings.primary_model, call_result.model)
 
             return TriageResponse(
                 result=call_result.result,

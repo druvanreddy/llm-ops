@@ -57,9 +57,7 @@ class PromptRegistry:
         workload_dir = self._prompts_dir / workload
         if not workload_dir.exists():
             return []
-        return sorted(
-            p.stem for p in workload_dir.glob("v*.yaml")
-        )
+        return sorted(p.stem for p in workload_dir.glob("v*.yaml"))
 
     def clear_cache(self) -> None:
         self._cache.clear()

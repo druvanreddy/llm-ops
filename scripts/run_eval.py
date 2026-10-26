@@ -4,6 +4,7 @@ Usage:
     python -m scripts.run_eval --split test --output results/current.json
     python -m scripts.run_eval --split dev --max-examples 20
 """
+
 from __future__ import annotations
 
 import argparse
@@ -55,6 +56,7 @@ def main() -> None:
 
     # Save results
     from pathlib import Path
+
     Path(args.output).parent.mkdir(parents=True, exist_ok=True)
     with open(args.output, "w") as f:
         json.dump(result.model_dump(), f, indent=2)
