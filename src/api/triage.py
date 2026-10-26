@@ -1,7 +1,9 @@
 from __future__ import annotations
 
 import logging
+import re
 import time
+import uuid
 
 from opentelemetry import trace
 
@@ -23,6 +25,24 @@ from src.prompts.registry import PromptRegistry
 
 logger = logging.getLogger(__name__)
 
+_INJECTION_PATTERNS = re.compile(
+    r"(ignore\s+(all\s+)?previous\s+instructions"
+    r"|you\s+are\s+now\s+a"
+    r"|system\s*:\s*"
+    r"|<\|im_start\|>"
+    r"|<\|endoftext\|>"
+    r"|```\s*system)",
+    re.IGNORECASE,
+)
+
+
+def _sanitize_input(text: str) -> str:
+    text = text.replace("\x00", "")
+    if _INJECTION_PATTERNS.search(text):
+        logger.warning("Potential prompt injection detected, stripping markers")
+        text = _INJECTION_PATTERNS.sub("[filtered]", text)
+    return text
+
 
 class TriageService:
     def __init__(
@@ -38,17 +58,24 @@ class TriageService:
         self._metrics = metrics
         self._tracer = trace.get_tracer("llm-ops-triage")
 
-    async def triage(self, ticket_text: str, client_id: str = "anonymous") -> TriageResponse:
+    async def triage(
+        self,
+        ticket_text: str,
+        client_id: str = "anonymous",
+        prompt_version: str | None = None,
+    ) -> TriageResponse:
+        request_id = uuid.uuid4().hex[:16]
+        ticket_text = _sanitize_input(ticket_text)
         start = time.perf_counter()
 
         with self._tracer.start_as_current_span("triage_request") as span:
+            span.set_attribute("app.request_id", request_id)
             span.set_attribute("app.client_id", client_id)
             span.set_attribute(APP_GIT_SHA, self._settings.git_sha)
 
             with self._tracer.start_as_current_span("load_prompt"):
-                prompt_config = self._registry.load(
-                    "triage", self._settings.active_prompt_version
-                )
+                version = prompt_version or self._settings.active_prompt_version
+                prompt_config = self._registry.load("triage", version)
                 span.set_attribute(APP_PROMPT_VERSION, prompt_config.version)
                 span.set_attribute(GENAI_REQUEST_MODEL, prompt_config.model)
                 span.set_attribute(GENAI_REQUEST_TEMPERATURE, prompt_config.temperature)
@@ -93,6 +120,7 @@ class TriageService:
             return TriageResponse(
                 result=call_result.result,
                 metadata=ResponseMetadata(
+                    request_id=request_id,
                     prompt_version=prompt_config.version,
                     model=call_result.model,
                     git_sha=self._settings.git_sha,

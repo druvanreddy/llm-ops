@@ -1,5 +1,7 @@
+import { useContext, useState } from 'react';
 import { NavLink } from 'react-router-dom';
-import { MessageSquareText, LayoutDashboard } from 'lucide-react';
+import { MessageSquareText, LayoutDashboard, BarChart3, Shield, FlaskConical, Sun, Moon, Menu, X } from 'lucide-react';
+import { ThemeContext } from '../App';
 
 function Logo() {
   return (
@@ -17,9 +19,39 @@ function Logo() {
   );
 }
 
+function ThemeToggle() {
+  const { dark, toggle } = useContext(ThemeContext);
+  return (
+    <button
+      onClick={toggle}
+      className="ml-2 p-2 rounded-lg text-slate-400 hover:text-white hover:bg-slate-700 transition-colors"
+      title={dark ? 'Switch to light mode' : 'Switch to dark mode'}
+    >
+      {dark ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+    </button>
+  );
+}
+
+const NAV_LINKS = [
+  { to: '/', icon: MessageSquareText, label: 'Triage' },
+  { to: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
+  { to: '/analytics', icon: BarChart3, label: 'Analytics' },
+  { to: '/rules', icon: Shield, label: 'Rules' },
+  { to: '/ab-test', icon: FlaskConical, label: 'A/B Test' },
+];
+
 export default function Navbar() {
+  const [mobileOpen, setMobileOpen] = useState(false);
+
   const linkClass = ({ isActive }) =>
     `flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+      isActive
+        ? 'bg-blue-600 text-white'
+        : 'text-slate-400 hover:text-white hover:bg-slate-700'
+    }`;
+
+  const mobileLinkClass = ({ isActive }) =>
+    `flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors ${
       isActive
         ? 'bg-blue-600 text-white'
         : 'text-slate-400 hover:text-white hover:bg-slate-700'
@@ -43,18 +75,47 @@ export default function Navbar() {
               v0.1.0
             </span>
           </div>
-          <div className="flex items-center gap-2">
-            <NavLink to="/" className={linkClass}>
-              <MessageSquareText className="w-4 h-4" />
-              Triage Demo
-            </NavLink>
-            <NavLink to="/dashboard" className={linkClass}>
-              <LayoutDashboard className="w-4 h-4" />
-              Dashboard
-            </NavLink>
+
+          {/* Desktop nav */}
+          <div className="hidden md:flex items-center gap-2">
+            {NAV_LINKS.map(({ to, icon: Icon, label }) => (
+              <NavLink key={to} to={to} className={linkClass}>
+                <Icon className="w-4 h-4" />
+                {label}
+              </NavLink>
+            ))}
+            <ThemeToggle />
+          </div>
+
+          {/* Mobile hamburger */}
+          <div className="flex md:hidden items-center gap-2">
+            <ThemeToggle />
+            <button
+              onClick={() => setMobileOpen(!mobileOpen)}
+              className="p-2 rounded-lg text-slate-400 hover:text-white hover:bg-slate-700 transition-colors"
+            >
+              {mobileOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+            </button>
           </div>
         </div>
       </div>
+
+      {/* Mobile menu */}
+      {mobileOpen && (
+        <div className="md:hidden border-t border-slate-700 bg-slate-900 px-4 py-3 space-y-1 animate-slide-down">
+          {NAV_LINKS.map(({ to, icon: Icon, label }) => (
+            <NavLink
+              key={to}
+              to={to}
+              className={mobileLinkClass}
+              onClick={() => setMobileOpen(false)}
+            >
+              <Icon className="w-4 h-4" />
+              {label}
+            </NavLink>
+          ))}
+        </div>
+      )}
     </nav>
   );
 }

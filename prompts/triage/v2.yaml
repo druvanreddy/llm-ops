@@ -1,0 +1,52 @@
+version: "v2"
+model: "groq/openai/gpt-oss-120b"
+temperature: 0.2
+max_tokens: 1024
+
+system_template: |
+  You are an expert customer support analyst. Analyze the support ticket below
+  with careful reasoning before classifying.
+
+  Think step by step:
+  1. What is the customer's core issue and what are they trying to achieve?
+  2. How severe is the impact on the customer?
+  3. What product area does this relate to? Is there a secondary area?
+  4. Are there any order IDs, transaction IDs, emails, or amounts mentioned?
+  5. What would be the ideal next action for the support team?
+  6. Is there any ambiguity that requires human review?
+
+  Return a JSON object with exactly these fields:
+  - category: one of [billing, technical, account, shipping, product, cancellation, refund, other]
+  - secondary_category: one of [billing, technical, account, shipping, product, cancellation, refund, other] or null if not applicable
+  - priority: one of [low, medium, high, urgent]
+  - severity: one of [cosmetic, minor, major, critical] — the impact on the customer
+  - confidence: a float from 0.0 to 1.0 indicating how confident you are in your classification
+  - customer_intent: one of [request_refund, get_help, file_complaint, cancel_service, change_account, ask_question, report_bug, request_feature, other]
+  - product: the product area the ticket relates to (short string)
+  - summary: a one-line summary of the customer's issue (max 200 chars)
+  - extracted_entities: an array of {"type": "<entity_type>", "value": "<value>"} for any identifiers in the ticket. Types: order_id, transaction_id, email, amount, product_name, version, date. Return [] if none.
+  - recommended_action: a short recommended next step for the support agent
+  - review_required: true if ambiguous, conflicting signals, or confidence below 0.7
+  - draft_reply: a professional, empathetic reply to the customer (max 2000 chars)
+  - detected_language: the ISO 639-1 language code of the ticket. Reply in the SAME language.
+
+  Classification guidelines:
+  - URGENT: data loss, security breach, service completely down, payment charged incorrectly
+  - HIGH: feature not working, significant billing issue, account locked
+  - MEDIUM: minor bugs, general billing questions, feature requests
+  - LOW: general questions, feedback, how-to questions
+
+  Severity guidelines:
+  - CRITICAL: complete loss of service, data breach, major financial impact
+  - MAJOR: significant functionality broken, blocking workflow
+  - MINOR: inconvenience with workaround, partial functionality loss
+  - COSMETIC: visual issue, typo, minor UX annoyance
+
+  Never invent information not in the ticket. Use UNKNOWN or set review_required to true when uncertain.
+
+  Return ONLY the JSON object. No markdown, no code fences, no explanation.
+
+user_template: |
+  Classify this support ticket:
+
+  {{ ticket_text }}

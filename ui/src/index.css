@@ -7,3 +7,242 @@ body {
   font-family: 'Inter', system-ui, -apple-system, sans-serif;
   -webkit-font-smoothing: antialiased;
 }
+
+/* ───────────────────────────────────────────
+   ANIMATIONS
+   ─────────────────────────────────────────── */
+
+@keyframes fade-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes slide-down {
+  from { opacity: 0; transform: translateY(-8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes pulse-dot {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
+.animate-fade-in {
+  animation: fade-in 0.3s ease-out both;
+}
+
+.animate-slide-down {
+  animation: slide-down 0.2s ease-out both;
+}
+
+.animate-pulse-dot {
+  animation: pulse-dot 2s ease-in-out infinite;
+}
+
+/* Stagger children for card grids */
+.stagger-children > * {
+  animation: fade-in 0.35s ease-out both;
+}
+.stagger-children > *:nth-child(1) { animation-delay: 0ms; }
+.stagger-children > *:nth-child(2) { animation-delay: 50ms; }
+.stagger-children > *:nth-child(3) { animation-delay: 100ms; }
+.stagger-children > *:nth-child(4) { animation-delay: 150ms; }
+.stagger-children > *:nth-child(5) { animation-delay: 200ms; }
+.stagger-children > *:nth-child(6) { animation-delay: 250ms; }
+
+/* ───────────────────────────────────────────
+   LIGHT MODE — comprehensive overrides
+   ─────────────────────────────────────────── */
+
+/* === Base === */
+html.light body {
+  background: #f1f5f9;
+  color: #1e293b;
+}
+
+/* === Backgrounds === */
+html.light .bg-slate-950 { background-color: #f1f5f9 !important; }
+html.light .bg-slate-900 { background-color: #e8edf3 !important; }
+html.light .bg-slate-800 { background-color: #ffffff !important; }
+html.light .bg-slate-800\/50 { background-color: rgba(255,255,255,0.85) !important; }
+html.light .bg-slate-700\/50 { background-color: #eef2f7 !important; }
+html.light .bg-transparent { background-color: transparent !important; }
+
+/* === Borders === */
+html.light .border-slate-700 { border-color: #cbd5e1 !important; }
+html.light .border-slate-700\/50 { border-color: rgba(203,213,225,0.6) !important; }
+html.light .border-slate-600 { border-color: #94a3b8 !important; }
+html.light .border-slate-800 { border-color: #cbd5e1 !important; }
+html.light .divide-slate-700 > * + * { border-color: #e2e8f0 !important; }
+
+/* === Text — strong contrast for readability === */
+html.light .text-white { color: #0f172a !important; }
+html.light .text-slate-300 { color: #1e293b !important; }
+html.light .text-slate-400 { color: #334155 !important; }
+html.light .text-slate-500 { color: #475569 !important; }
+html.light .text-slate-600 { color: #64748b !important; }
+html.light .placeholder-slate-500::placeholder { color: #94a3b8 !important; }
+
+/* Keep white text on colored primary buttons */
+html.light .bg-blue-600 { color: #ffffff !important; }
+html.light .bg-purple-600 { color: #ffffff !important; }
+html.light .bg-green-600 { color: #ffffff !important; }
+
+/* === Navbar === */
+html.light nav {
+  background-color: #ffffff !important;
+  border-color: #cbd5e1 !important;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+}
+
+html.light nav .bg-slate-900 {
+  background-color: #ffffff !important;
+}
+
+/* Nav link inactive */
+html.light nav .text-slate-400 { color: #475569 !important; }
+html.light nav .hover\:text-white:hover { color: #0f172a !important; }
+html.light nav .hover\:bg-slate-700:hover { background-color: #f1f5f9 !important; }
+
+/* Mobile menu in light mode */
+html.light .animate-slide-down {
+  background-color: #ffffff !important;
+}
+
+/* Version badge */
+html.light .bg-blue-500\/20 { background-color: rgba(59,130,246,0.12) !important; }
+html.light .border-blue-500\/30 { border-color: rgba(59,130,246,0.25) !important; }
+html.light .text-blue-300 { color: #2563eb !important; }
+
+/* === Hover states === */
+html.light .hover\:bg-slate-700:hover { background-color: #e2e8f0 !important; }
+html.light .hover\:bg-slate-800:hover { background-color: #f1f5f9 !important; }
+html.light .hover\:text-white:hover { color: #0f172a !important; }
+html.light .hover\:border-slate-600:hover { border-color: #94a3b8 !important; }
+
+/* === Form Inputs === */
+html.light textarea,
+html.light input,
+html.light select {
+  color: #1e293b !important;
+}
+html.light .bg-slate-900 textarea,
+html.light .bg-slate-800 textarea {
+  color: #1e293b !important;
+}
+html.light select option {
+  background: #ffffff;
+  color: #1e293b;
+}
+
+/* === Disabled button === */
+html.light .disabled\:bg-slate-600:disabled { background-color: #cbd5e1 !important; }
+html.light .disabled\:cursor-not-allowed:disabled { color: #94a3b8 !important; }
+
+/* === Cards and panels — subtle shadows === */
+html.light .bg-slate-800.rounded-xl,
+html.light .bg-slate-800.rounded-lg {
+  box-shadow: 0 1px 3px rgba(0,0,0,0.05), 0 1px 2px rgba(0,0,0,0.03);
+}
+
+/* === Latency / metric inner boxes === */
+html.light .bg-slate-900.rounded-lg {
+  background-color: #f1f5f9 !important;
+  border: 1px solid #e2e8f0;
+}
+
+/* === Colored accent text — keep vivid in light mode === */
+html.light .text-blue-400 { color: #2563eb !important; }
+html.light .text-blue-300 { color: #2563eb !important; }
+html.light .text-amber-400 { color: #d97706 !important; }
+html.light .text-red-400 { color: #dc2626 !important; }
+html.light .text-green-400 { color: #16a34a !important; }
+html.light .text-purple-400 { color: #7c3aed !important; }
+html.light .text-yellow-400 { color: #ca8a04 !important; }
+html.light .text-cyan-400 { color: #0891b2 !important; }
+
+/* === Alert/info banners (confidence, language, escalation) === */
+html.light .bg-green-900\/30 { background-color: rgba(22,163,74,0.08) !important; }
+html.light .bg-amber-900\/30 { background-color: rgba(217,119,6,0.08) !important; }
+html.light .bg-red-900\/30 { background-color: rgba(220,38,38,0.08) !important; }
+html.light .bg-blue-900\/30 { background-color: rgba(37,99,235,0.08) !important; }
+html.light .bg-green-900\/40 { background-color: rgba(22,163,74,0.1) !important; }
+html.light .bg-red-900\/40 { background-color: rgba(220,38,38,0.1) !important; }
+html.light .border-green-800 { border-color: rgba(22,163,74,0.25) !important; }
+html.light .border-amber-800 { border-color: rgba(217,119,6,0.25) !important; }
+html.light .border-red-800 { border-color: rgba(220,38,38,0.25) !important; }
+html.light .border-blue-800 { border-color: rgba(37,99,235,0.25) !important; }
+html.light .border-amber-700 { border-color: rgba(217,119,6,0.3) !important; }
+html.light .border-amber-700\/50 { border-color: rgba(217,119,6,0.2) !important; }
+html.light .border-red-700 { border-color: rgba(220,38,38,0.3) !important; }
+html.light .border-green-700 { border-color: rgba(22,163,74,0.3) !important; }
+html.light .text-green-300 { color: #16a34a !important; }
+html.light .text-amber-300 { color: #d97706 !important; }
+html.light .text-red-300 { color: #dc2626 !important; }
+html.light .text-amber-400 { color: #d97706 !important; }
+
+/* === Recharts — make grid, axes, tooltips readable === */
+html.light .recharts-cartesian-grid line { stroke: #cbd5e1 !important; }
+html.light .recharts-cartesian-axis-tick text { fill: #475569 !important; }
+html.light .recharts-default-tooltip {
+  background-color: #ffffff !important;
+  border: 1px solid #cbd5e1 !important;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+}
+html.light .recharts-tooltip-label { color: #0f172a !important; }
+html.light .recharts-tooltip-item { color: #334155 !important; }
+html.light .recharts-legend-item-text { color: #334155 !important; }
+
+/* Pie chart label text in light mode */
+html.light .recharts-pie-label-text { fill: #334155 !important; }
+html.light .recharts-text.recharts-pie-label-text { fill: #334155 !important; }
+
+/* Area chart gradient */
+html.light .recharts-area .recharts-area-area { opacity: 0.15; }
+
+/* === Dashboard service-status dot colors === */
+html.light .text-green-400 { color: #16a34a !important; }
+
+/* === Triage result draft-reply box === */
+html.light .bg-slate-900.rounded-lg.p-4,
+html.light .bg-slate-900.rounded-lg.p-3 {
+  background-color: #f1f5f9 !important;
+  border: 1px solid #e2e8f0;
+}
+html.light .text-slate-300 { color: #334155 !important; }
+
+/* === Status badges — ensure they pop on white === */
+html.light .bg-orange-500 { background-color: #ea580c !important; }
+html.light .bg-yellow-500 { background-color: #ca8a04 !important; }
+
+/* === Rules page === */
+html.light .opacity-50 { opacity: 0.45 !important; }
+
+/* === A/B Test page === */
+html.light .bg-purple-600 { background-color: #7c3aed !important; }
+html.light .hover\:bg-purple-500:hover { background-color: #6d28d9 !important; }
+html.light .bg-purple-900\/20 { background-color: rgba(124,58,237,0.06) !important; }
+html.light .bg-purple-900\/40 { background-color: rgba(124,58,237,0.1) !important; }
+html.light .border-purple-800\/50 { border-color: rgba(124,58,237,0.2) !important; }
+html.light .border-purple-800\/30 { border-color: rgba(124,58,237,0.15) !important; }
+html.light .text-purple-300 { color: #7c3aed !important; }
+html.light .hover\:border-purple-500\/50:hover { border-color: rgba(124,58,237,0.4) !important; }
+
+/* === Focus ring for inputs === */
+html.light textarea:focus,
+html.light input:focus,
+html.light select:focus {
+  outline: 2px solid #3b82f6;
+  outline-offset: -1px;
+}
+
+/* === Scrollbar for light mode === */
+html.light ::-webkit-scrollbar { width: 6px; }
+html.light ::-webkit-scrollbar-track { background: #f1f5f9; }
+html.light ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+html.light ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+
+/* === Feedback buttons in light mode === */
+html.light .bg-green-900\/50 { background-color: rgba(22,163,74,0.1) !important; }
+html.light .bg-red-900\/50 { background-color: rgba(220,38,38,0.1) !important; }

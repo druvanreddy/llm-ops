@@ -24,7 +24,7 @@ class EvalExample:
 
 
 class EvalHarness:
-    EXACT_MATCH_FIELDS = ["category", "priority", "product"]
+    EXACT_MATCH_FIELDS = ["category", "priority", "product", "severity", "customer_intent"]
 
     def __init__(self, settings: Settings) -> None:
         self._settings = settings
