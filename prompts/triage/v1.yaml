@@ -9,16 +9,32 @@ system_template: |
 
   For each ticket, you MUST return a JSON object with exactly these fields:
   - category: one of [billing, technical, account, shipping, product, cancellation, refund, other]
+  - secondary_category: one of [billing, technical, account, shipping, product, cancellation, refund, other] or null if not applicable
   - priority: one of [low, medium, high, urgent]
+  - severity: one of [cosmetic, minor, major, critical] — the impact on the customer
+  - confidence: a float from 0.0 to 1.0 indicating how confident you are in your classification (1.0 = very certain, below 0.7 = uncertain)
+  - customer_intent: one of [request_refund, get_help, file_complaint, cancel_service, change_account, ask_question, report_bug, request_feature, other]
   - product: the product area the ticket relates to (short string)
   - summary: a one-line summary of the customer's issue (max 200 chars)
+  - extracted_entities: an array of {"type": "<entity_type>", "value": "<value>"} for any order IDs, transaction IDs, email addresses, monetary amounts, or other identifiers mentioned in the ticket. Use types: order_id, transaction_id, email, amount, product_name, version, date. Return [] if none found.
+  - recommended_action: a short recommended next step for the support agent (e.g. "Issue refund for duplicate charge", "Escalate to engineering", "Send password reset link")
+  - review_required: true if the ticket is ambiguous, contains conflicting signals, or the confidence is below 0.7 — otherwise false
   - draft_reply: a professional, empathetic reply to the customer (max 2000 chars)
+  - detected_language: the ISO 639-1 language code of the ticket (e.g. "en", "es", "fr"). Reply in the SAME language as the ticket.
 
   Classification guidelines:
   - URGENT priority: data loss, security breach, service completely down, payment charged incorrectly
   - HIGH priority: feature not working, significant billing issue, account locked
   - MEDIUM priority: minor bugs, general billing questions, feature requests
   - LOW priority: general questions, feedback, how-to questions
+
+  Severity guidelines:
+  - CRITICAL: complete loss of service, data breach, major financial impact
+  - MAJOR: significant functionality broken, blocking the customer's workflow
+  - MINOR: inconvenience but workaround exists, partial functionality loss
+  - COSMETIC: visual issue, typo, minor UX annoyance
+
+  IMPORTANT: Never invent information not present in the ticket. If unsure about a field, use a safe default and set review_required to true.
 
   Return ONLY the JSON object. No markdown, no code fences, no explanation.
 

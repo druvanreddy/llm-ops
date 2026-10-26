@@ -1,16 +1,33 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useContext } from 'react';
 import {
   Activity, Zap, DollarSign, AlertCircle, Shield, Clock, RefreshCw,
   CheckCircle2, XCircle, ArrowRightLeft, Hash, TrendingUp,
 } from 'lucide-react';
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer,
-  PieChart, Pie, Cell, LineChart, Line, CartesianGrid,
+  PieChart, Pie, Cell, LineChart, Line, CartesianGrid, Area, AreaChart,
 } from 'recharts';
 import { fetchHealth, fetchReadiness, fetchMetrics, parsePrometheusMetrics } from '../lib/api';
 import StatCard from '../components/StatCard';
+import { ThemeContext } from '../App';
 
 const PIE_COLORS = ['#3b82f6', '#22c55e', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#06b6d4', '#64748b'];
+
+function useChartTheme() {
+  const { dark } = useContext(ThemeContext);
+  return {
+    tooltip: {
+      background: dark ? '#1e293b' : '#ffffff',
+      border: `1px solid ${dark ? '#334155' : '#cbd5e1'}`,
+      borderRadius: 8,
+      boxShadow: dark ? 'none' : '0 4px 12px rgba(0,0,0,0.08)',
+    },
+    tooltipLabel: { color: dark ? '#94a3b8' : '#475569' },
+    grid: dark ? '#334155' : '#e2e8f0',
+    axis: dark ? '#64748b' : '#475569',
+    axisLight: dark ? '#94a3b8' : '#64748b',
+  };
+}
 
 export default function Dashboard() {
   const [health, setHealth] = useState(null);
@@ -20,22 +37,30 @@ export default function Dashboard() {
   const [autoRefresh, setAutoRefresh] = useState(true);
   const [error, setError] = useState(null);
   const [latencyHistory, setLatencyHistory] = useState([]);
+  const [dbStats, setDbStats] = useState(null);
 
   const refresh = useCallback(async () => {
     try {
-      const [h, r, m] = await Promise.all([fetchHealth(), fetchReadiness(), fetchMetrics()]);
+      const [h, r, m, s] = await Promise.all([
+        fetchHealth(),
+        fetchReadiness(),
+        fetchMetrics(),
+        fetch('/api/v1/stats').then(res => res.ok ? res.json() : null).catch(() => null),
+      ]);
       setHealth(h);
       setReadiness(r);
       const parsed = parsePrometheusMetrics(m);
       setMetrics(parsed);
+      if (s) setDbStats(s);
       setLastRefresh(new Date());
       setError(null);
 
-      const avgLatency = getSum(parsed, 'llm_request_duration_seconds_sum') /
-        (getSum(parsed, 'llm_request_duration_seconds_count') || 1);
-      setLatencyHistory((prev) =>
-        [...prev, { time: new Date().toLocaleTimeString(), value: +(avgLatency * 1000).toFixed(0) }].slice(-30)
-      );
+      if (s?.latency_history?.length > 0) {
+        setLatencyHistory(s.latency_history.map(p => ({
+          time: new Date(p.time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+          value: p.value,
+        })));
+      }
     } catch (err) {
       setError(err.message);
     }
@@ -51,20 +76,28 @@ export default function Dashboard() {
     return () => clearInterval(id);
   }, [autoRefresh, refresh]);
 
-  const totalRequests = getSum(metrics, 'llm_requests_total');
+  const ct = useChartTheme();
+
+  const totalRequests = dbStats?.total_requests ?? getSum(metrics, 'llm_requests_total');
   const totalErrors = getSum(metrics, 'llm_errors_total');
-  const totalCost = getSum(metrics, 'llm_cost_dollars_total');
-  const totalTokens = getSum(metrics, 'llm_tokens_total');
-  const totalFallbacks = getSum(metrics, 'llm_fallback_total');
-  const schemaValid = getSum(metrics, 'llm_schema_valid_total');
+  const totalCost = dbStats?.total_cost ?? getSum(metrics, 'llm_cost_dollars_total');
+  const totalTokens = dbStats ? (dbStats.total_input_tokens + dbStats.total_output_tokens) : getSum(metrics, 'llm_tokens_total');
+  const totalFallbacks = dbStats?.total_fallbacks ?? getSum(metrics, 'llm_fallback_total');
+  const schemaValid = dbStats?.total_requests ?? getSum(metrics, 'llm_schema_valid_total');
 
   const errorsByClass = getGrouped(metrics, 'llm_errors_total', 'error_class');
-  const requestsByStatus = getGrouped(metrics, 'llm_requests_total', 'status');
+  const promRequestsByStatus = getGrouped(metrics, 'llm_requests_total', 'status');
+  const requestsByStatus = dbStats && dbStats.total_requests > 0
+    ? [{ name: 'success', value: dbStats.total_requests }]
+    : promRequestsByStatus;
   const tokensByDir = getGrouped(metrics, 'llm_tokens_total', 'direction');
-  const requestsByModel = getGrouped(metrics, 'llm_requests_total', 'model');
+  const promRequestsByModel = getGrouped(metrics, 'llm_requests_total', 'model');
+  const requestsByModel = dbStats?.requests_by_model?.length > 0
+    ? dbStats.requests_by_model
+    : promRequestsByModel;
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 animate-fade-in">
       {/* Header */}
       <div className="flex items-center justify-between mb-8">
         <div>
@@ -110,8 +143,8 @@ export default function Dashboard() {
 
       {/* Service Status */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-        <ServiceStatus label="Health" data={health} field="status" />
-        <ServiceStatus label="Readiness" data={readiness} field="status" />
+        <ServiceStatus label="Health" sub="Is the backend server running?" data={health} field="status" />
+        <ServiceStatus label="Readiness" sub="Can it accept triage requests?" data={readiness} field="status" />
         <div className="bg-slate-800 rounded-xl border border-slate-700 p-4">
           <div className="text-xs text-slate-400 mb-1">Version</div>
           <div className="text-lg font-mono text-white">{health?.version || '—'}</div>
@@ -139,32 +172,38 @@ export default function Dashboard() {
       </div>
 
       {/* Key Metrics */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4 mb-6">
-        <StatCard icon={Hash} label="Requests" value={fmt(totalRequests)} color="text-blue-400" />
-        <StatCard icon={AlertCircle} label="Errors" value={fmt(totalErrors)} color="text-red-400" />
-        <StatCard icon={DollarSign} label="Total Cost" value={`$${totalCost.toFixed(4)}`} color="text-green-400" />
-        <StatCard icon={Zap} label="Tokens" value={fmtK(totalTokens)} color="text-yellow-400" />
-        <StatCard icon={ArrowRightLeft} label="Fallbacks" value={fmt(totalFallbacks)} color="text-amber-400" />
-        <StatCard icon={Shield} label="Schema Valid" value={fmt(schemaValid)} color="text-cyan-400" />
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4 mb-6 stagger-children">
+        <StatCard icon={Hash} label="Requests" value={fmt(totalRequests)} sub="Tickets triaged so far" color="text-blue-400" />
+        <StatCard icon={AlertCircle} label="Errors" value={fmt(totalErrors)} sub="Failed triage attempts" color="text-red-400" />
+        <StatCard icon={DollarSign} label="Total Cost" value={`$${totalCost.toFixed(4)}`} sub="Money spent on LLM calls" color="text-green-400" />
+        <StatCard icon={Zap} label="Tokens" value={fmtK(totalTokens)} sub="Text units processed by LLM" color="text-yellow-400" />
+        <StatCard icon={ArrowRightLeft} label="Fallbacks" value={fmt(totalFallbacks)} sub="Times backup model was used" color="text-amber-400" />
+        <StatCard icon={Shield} label="Schema Valid" value={fmt(schemaValid)} sub="Properly formatted responses" color="text-cyan-400" />
       </div>
 
       {/* Charts Row */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
         {/* Latency Over Time */}
-        <ChartCard title="Avg Latency (ms)" icon={Clock}>
-          {latencyHistory.length > 1 ? (
+        <ChartCard title="Latency per Request (ms)" subtitle="Response time for each triage call — lower is better" icon={Clock}>
+          {latencyHistory.length > 0 ? (
             <ResponsiveContainer width="100%" height={200}>
-              <LineChart data={latencyHistory}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
-                <XAxis dataKey="time" tick={{ fontSize: 10, fill: '#64748b' }} />
-                <YAxis tick={{ fontSize: 10, fill: '#64748b' }} />
+              <AreaChart data={latencyHistory}>
+                <defs>
+                  <linearGradient id="latencyGrad" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.3} />
+                    <stop offset="95%" stopColor="#3b82f6" stopOpacity={0} />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" stroke={ct.grid} />
+                <XAxis dataKey="time" tick={{ fontSize: 10, fill: ct.axis }} />
+                <YAxis tick={{ fontSize: 10, fill: ct.axis }} unit="ms" />
                 <Tooltip
-                  contentStyle={{ background: '#1e293b', border: '1px solid #334155', borderRadius: 8 }}
-                  labelStyle={{ color: '#94a3b8' }}
-                  itemStyle={{ color: '#3b82f6' }}
+                  contentStyle={ct.tooltip}
+                  labelStyle={ct.tooltipLabel}
+                  formatter={(val) => [`${val} ms`, 'Latency']}
                 />
-                <Line type="monotone" dataKey="value" stroke="#3b82f6" strokeWidth={2} dot={false} />
-              </LineChart>
+                <Area type="monotone" dataKey="value" stroke="#3b82f6" strokeWidth={2} fill="url(#latencyGrad)" dot={{ fill: '#3b82f6', r: 4 }} activeDot={{ r: 6, fill: '#60a5fa' }} />
+              </AreaChart>
             </ResponsiveContainer>
           ) : (
             <EmptyChart />
@@ -172,16 +211,13 @@ export default function Dashboard() {
         </ChartCard>
 
         {/* Requests by Model */}
-        <ChartCard title="Requests by Model" icon={Cpu}>
+        <ChartCard title="Requests by Model" subtitle="Which LLM model handled each request" icon={Cpu}>
           {requestsByModel.length > 0 ? (
             <ResponsiveContainer width="100%" height={200}>
               <BarChart data={requestsByModel}>
-                <XAxis dataKey="name" tick={{ fontSize: 10, fill: '#64748b' }} />
-                <YAxis tick={{ fontSize: 10, fill: '#64748b' }} />
-                <Tooltip
-                  contentStyle={{ background: '#1e293b', border: '1px solid #334155', borderRadius: 8 }}
-                  labelStyle={{ color: '#94a3b8' }}
-                />
+                <XAxis dataKey="name" tick={{ fontSize: 10, fill: ct.axis }} />
+                <YAxis tick={{ fontSize: 10, fill: ct.axis }} />
+                <Tooltip contentStyle={ct.tooltip} labelStyle={ct.tooltipLabel} />
                 <Bar dataKey="value" fill="#3b82f6" radius={[4, 4, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
@@ -191,7 +227,7 @@ export default function Dashboard() {
         </ChartCard>
 
         {/* Error Distribution */}
-        <ChartCard title="Error Distribution" icon={AlertCircle}>
+        <ChartCard title="Error Distribution" subtitle="Breakdown of what went wrong" icon={AlertCircle}>
           {errorsByClass.length > 0 ? (
             <ResponsiveContainer width="100%" height={200}>
               <PieChart>
@@ -209,9 +245,7 @@ export default function Dashboard() {
                     <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />
                   ))}
                 </Pie>
-                <Tooltip
-                  contentStyle={{ background: '#1e293b', border: '1px solid #334155', borderRadius: 8 }}
-                />
+                <Tooltip contentStyle={ct.tooltip} />
               </PieChart>
             </ResponsiveContainer>
           ) : (
@@ -223,28 +257,36 @@ export default function Dashboard() {
       {/* Bottom Row */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Token Breakdown */}
-        <ChartCard title="Token Usage" icon={TrendingUp}>
+        <ChartCard title="Token Usage" subtitle="Input = your ticket text sent to LLM · Output = LLM's response" icon={TrendingUp}>
           <div className="flex items-center justify-around py-6">
-            {tokensByDir.map((t) => (
+            {dbStats ? (
+              <>
+                <div className="text-center">
+                  <div className="text-2xl font-bold text-white">{fmtK(dbStats.total_input_tokens)}</div>
+                  <div className="text-xs text-slate-400 mt-1 uppercase">INPUT</div>
+                </div>
+                <div className="text-center">
+                  <div className="text-2xl font-bold text-white">{fmtK(dbStats.total_output_tokens)}</div>
+                  <div className="text-xs text-slate-400 mt-1 uppercase">OUTPUT</div>
+                </div>
+              </>
+            ) : tokensByDir.length > 0 ? tokensByDir.map((t) => (
               <div key={t.name} className="text-center">
                 <div className="text-2xl font-bold text-white">{fmtK(t.value)}</div>
                 <div className="text-xs text-slate-400 mt-1 uppercase">{t.name}</div>
               </div>
-            ))}
-            {tokensByDir.length === 0 && <EmptyChart />}
+            )) : <EmptyChart />}
           </div>
         </ChartCard>
 
         {/* Request Status Breakdown */}
-        <ChartCard title="Request Status" icon={Activity}>
+        <ChartCard title="Request Status" subtitle="Success vs. failed triage calls" icon={Activity}>
           {requestsByStatus.length > 0 ? (
             <ResponsiveContainer width="100%" height={200}>
               <BarChart data={requestsByStatus} layout="vertical">
-                <XAxis type="number" tick={{ fontSize: 10, fill: '#64748b' }} />
-                <YAxis type="category" dataKey="name" tick={{ fontSize: 10, fill: '#94a3b8' }} width={80} />
-                <Tooltip
-                  contentStyle={{ background: '#1e293b', border: '1px solid #334155', borderRadius: 8 }}
-                />
+                <XAxis type="number" tick={{ fontSize: 10, fill: ct.axis }} />
+                <YAxis type="category" dataKey="name" tick={{ fontSize: 10, fill: ct.axisLight }} width={80} />
+                <Tooltip contentStyle={ct.tooltip} />
                 <Bar dataKey="value" radius={[0, 4, 4, 0]}>
                   {requestsByStatus.map((entry, i) => (
                     <Cell key={i} fill={entry.name === 'success' ? '#22c55e' : '#ef4444'} />
@@ -261,7 +303,7 @@ export default function Dashboard() {
   );
 }
 
-function ServiceStatus({ label, data, field }) {
+function ServiceStatus({ label, sub, data, field }) {
   const val = data?.[field];
   const ok = val === 'healthy' || val === 'ready';
   return (
@@ -273,16 +315,20 @@ function ServiceStatus({ label, data, field }) {
           {val || (data ? 'Error' : 'Unknown')}
         </span>
       </div>
+      {sub && <p className="text-xs text-slate-500 mt-1">{sub}</p>}
     </div>
   );
 }
 
-function ChartCard({ title, icon: Icon, children }) {
+function ChartCard({ title, subtitle, icon: Icon, children }) {
   return (
     <div className="bg-slate-800 rounded-xl border border-slate-700 p-5">
-      <div className="flex items-center gap-2 mb-4">
-        {Icon && <Icon className="w-4 h-4 text-slate-400" />}
-        <span className="text-sm font-semibold text-slate-300">{title}</span>
+      <div className="mb-4">
+        <div className="flex items-center gap-2">
+          {Icon && <Icon className="w-4 h-4 text-slate-400" />}
+          <span className="text-sm font-semibold text-slate-300">{title}</span>
+        </div>
+        {subtitle && <p className="text-xs text-slate-500 mt-1 ml-6">{subtitle}</p>}
       </div>
       {children}
     </div>
@@ -291,8 +337,11 @@ function ChartCard({ title, icon: Icon, children }) {
 
 function EmptyChart({ label = 'No data yet' }) {
   return (
-    <div className="h-[200px] flex items-center justify-center text-sm text-slate-600">
-      {label}
+    <div className="h-[200px] flex flex-col items-center justify-center text-slate-500">
+      <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="mb-2 opacity-40">
+        <path d="M3 3v18h18" /><path d="M7 16l4-8 4 4 4-6" />
+      </svg>
+      <p className="text-sm">{label}</p>
     </div>
   );
 }

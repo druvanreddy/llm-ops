@@ -52,6 +52,11 @@ langfuse_db_data/
 results/dev.json
 results/load-test/
 
+# Local database
+triage_history.db
+triage_history.db-wal
+triage_history.db-shm
+
 # Never commit secrets
 *.pem
 *.key
