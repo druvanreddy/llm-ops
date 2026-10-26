@@ -1,4 +1,5 @@
 """Tests for Phase 3 request validation schemas."""
+
 from __future__ import annotations
 
 import pytest
@@ -116,7 +117,16 @@ class TestRuleCreateRequest:
             RuleCreateRequest(name="Test", priority="extreme")
 
     def test_all_categories(self) -> None:
-        for c in ["billing", "technical", "account", "shipping", "product", "cancellation", "refund", "other"]:
+        for c in [
+            "billing",
+            "technical",
+            "account",
+            "shipping",
+            "product",
+            "cancellation",
+            "refund",
+            "other",
+        ]:
             req = RuleCreateRequest(name="Test", category=c)
             assert req.category == c
 

@@ -10,7 +10,7 @@ import pytest
 from src.eval.harness import EvalHarness
 
 
-@pytest.fixture()
+@pytest.fixture
 def settings():
     s = MagicMock()
     s.golden_set_path = "data/golden_set"
@@ -24,7 +24,7 @@ def settings():
     return s
 
 
-@pytest.fixture()
+@pytest.fixture
 def harness(settings):
     with patch("src.eval.harness.LLMMetrics"):
         with patch("src.eval.harness.LLMGateway"):

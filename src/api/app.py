@@ -117,8 +117,7 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
 app = FastAPI(
     title="LLM Ops — Support Ticket Triage API",
     description=(
-        "Production LLM service with versioned prompts, "
-        "eval-gated CI/CD, and provider failover"
+        "Production LLM service with versioned prompts, eval-gated CI/CD, and provider failover"
     ),
     version="0.1.0",
     lifespan=lifespan,
@@ -144,7 +143,9 @@ async def health(settings: Settings = Depends(get_settings)) -> HealthResponse: 
 
 
 @app.get("/readyz", response_model=ReadinessResponse, tags=["ops"])
-async def readiness(request: Request, settings: Settings = Depends(get_settings)) -> ReadinessResponse:  # noqa: B008
+async def readiness(
+    request: Request, settings: Settings = Depends(get_settings)  # noqa: B008
+) -> ReadinessResponse:
     checks: dict[str, bool] = {}
 
     try:
@@ -153,12 +154,15 @@ async def readiness(request: Request, settings: Settings = Depends(get_settings)
     except Exception:
         checks["prompt_loaded"] = False
 
-    has_any_key = bool(settings.openai_api_key or settings.anthropic_api_key or settings.groq_api_key)
+    has_any_key = bool(
+        settings.openai_api_key or settings.anthropic_api_key or settings.groq_api_key
+    )
     checks["primary_model_configured"] = has_any_key
     checks["fallback_model_configured"] = has_any_key
 
     try:
         from src.core.database import _get_conn
+
         with _get_conn() as conn:
             conn.execute("SELECT 1").fetchone()
         checks["database"] = True
@@ -216,10 +220,14 @@ async def triage_ticket(
         )
 
     try:
-        response = await service.triage(body.ticket_text, body.client_id, prompt_version=body.prompt_version)
+        response = await service.triage(
+            body.ticket_text, body.client_id, prompt_version=body.prompt_version
+        )
         lang = response.result.detected_language or "en"
         request_id = response.metadata.request_id
-        row_id = save_triage(body.ticket_text, response.model_dump(), language=lang, request_id=request_id)
+        row_id = save_triage(
+            body.ticket_text, response.model_dump(), language=lang, request_id=request_id
+        )
         # Check escalation rules
         triggered = check_escalation(
             response.result.priority.value,
@@ -229,8 +237,7 @@ async def triage_ticket(
         result["db_id"] = row_id
         if triggered:
             result["escalations"] = [
-                {"name": r["name"], "action": r["action"], "target": r["target"]}
-                for r in triggered
+                {"name": r["name"], "action": r["action"], "target": r["target"]} for r in triggered
             ]
         return result
     except ValueError as exc:
@@ -241,6 +248,7 @@ async def triage_ticket(
 
 
 # --- History endpoints ---
+
 
 @app.get("/api/v1/history", tags=["history"])
 async def list_history() -> list[dict]:
@@ -273,6 +281,7 @@ async def delete_history() -> dict:
 
 # --- Feedback ---
 
+
 @app.post("/api/v1/feedback", tags=["feedback"])
 async def submit_feedback(body: FeedbackRequest) -> dict:
     ok = set_feedback(body.id, body.feedback)
@@ -280,6 +289,7 @@ async def submit_feedback(body: FeedbackRequest) -> dict:
 
 
 # --- Export ---
+
 
 @app.get("/api/v1/export/{fmt}", tags=["export"])
 async def export_data(fmt: str) -> Response:
@@ -297,9 +307,11 @@ async def export_data(fmt: str) -> Response:
 
 # --- Bulk triage ---
 
+
 @app.post("/api/v1/bulk-triage", tags=["triage"])
 async def bulk_triage(request: Request, body: BulkTriageRequest) -> dict:
     import asyncio
+
     service: TriageService = request.app.state.service
     semaphore = asyncio.Semaphore(5)
 
@@ -313,10 +325,15 @@ async def bulk_triage(request: Request, body: BulkTriageRequest) -> dict:
                 return {"text": ticket_text, "result": None, "error": str(exc)}
 
     results = await asyncio.gather(*[process_one(t) for t in body.tickets])
-    return {"results": results, "total": len(results), "success": sum(1 for r in results if r["result"])}
+    return {
+        "results": results,
+        "total": len(results),
+        "success": sum(1 for r in results if r["result"]),
+    }
 
 
 # --- Escalation rules ---
+
 
 @app.get("/api/v1/rules", tags=["rules"])
 async def list_rules() -> list[dict]:
@@ -347,9 +364,11 @@ async def toggle_rule_endpoint(rule_id: int, body: RuleToggleRequest) -> dict:
 
 # --- A/B Prompt Testing ---
 
+
 @app.post("/api/v1/ab-test", tags=["triage"])
 async def ab_test(request: Request, body: ABTestRequest) -> dict:
     import asyncio
+
     service: TriageService = request.app.state.service
 
     async def run_version(version: str) -> dict:
@@ -359,11 +378,14 @@ async def ab_test(request: Request, body: ABTestRequest) -> dict:
         except Exception as exc:
             return {"version": version, "result": None, "error": str(exc)}
 
-    a_result, b_result = await asyncio.gather(run_version(body.version_a), run_version(body.version_b))
+    a_result, b_result = await asyncio.gather(
+        run_version(body.version_a), run_version(body.version_b)
+    )
     return {"a": a_result, "b": b_result}
 
 
 # --- Eval ---
+
 
 @app.post("/api/v1/eval", tags=["eval"])
 async def run_eval(request: Request) -> dict:
@@ -394,6 +416,7 @@ async def run_eval_dev(request: Request) -> dict:
 
 
 # --- Metrics ---
+
 
 @app.get("/metrics", tags=["ops"], include_in_schema=False)
 async def prometheus_metrics() -> Response:

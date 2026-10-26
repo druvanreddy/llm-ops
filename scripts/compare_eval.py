@@ -6,11 +6,11 @@ Usage:
 from __future__ import annotations
 
 import argparse
+import json
 import sys
 
-from src.eval.compare import compare, load_baseline, save_result
 from src.core.schemas import EvalResult
-import json
+from src.eval.compare import compare
 
 
 def main() -> None:

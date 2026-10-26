@@ -1,8 +1,9 @@
 """Integration tests for FastAPI endpoints in src/api/app.py."""
+
 from __future__ import annotations
 
 from pathlib import Path
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import MagicMock, patch
 
 import pytest
 from httpx import ASGITransport, AsyncClient
@@ -18,7 +19,7 @@ def _temp_db(tmp_path: Path):
         yield
 
 
-@pytest.fixture()
+@pytest.fixture
 def mock_settings():
     settings = MagicMock()
     settings.app_version = "0.1.0"
@@ -35,7 +36,7 @@ def mock_settings():
     return settings
 
 
-@pytest.fixture()
+@pytest.fixture
 def mock_gateway():
     gateway = MagicMock()
     gateway._primary_breaker = MagicMock()
@@ -45,7 +46,7 @@ def mock_gateway():
     return gateway
 
 
-@pytest.fixture()
+@pytest.fixture
 async def client(mock_settings, mock_gateway):
     from src.api.app import app
 
@@ -199,20 +200,23 @@ class TestExportEndpoints:
         assert resp.headers["content-type"] == "application/json"
 
     async def test_export_csv(self, client: AsyncClient) -> None:
-        db.save_triage("csv test ticket", {
-            "result": {
-                "category": "billing",
-                "priority": "high",
-                "product": "payments",
-                "summary": "test summary",
+        db.save_triage(
+            "csv test ticket",
+            {
+                "result": {
+                    "category": "billing",
+                    "priority": "high",
+                    "product": "payments",
+                    "summary": "test summary",
+                },
+                "metadata": {
+                    "model": "test-model",
+                    "latency_ms": 100.0,
+                    "input_tokens": 10,
+                    "output_tokens": 20,
+                },
             },
-            "metadata": {
-                "model": "test-model",
-                "latency_ms": 100.0,
-                "input_tokens": 10,
-                "output_tokens": 20,
-            },
-        })
+        )
         resp = await client.get("/api/v1/export/csv")
         assert resp.status_code == 200
         assert "text/csv" in resp.headers["content-type"]
@@ -249,4 +253,7 @@ class TestMetricsEndpoint:
     async def test_prometheus_metrics(self, client: AsyncClient) -> None:
         resp = await client.get("/metrics")
         assert resp.status_code == 200
-        assert "text/plain" in resp.headers["content-type"] or "openmetrics" in resp.headers["content-type"]
+        assert (
+            "text/plain" in resp.headers["content-type"]
+            or "openmetrics" in resp.headers["content-type"]
+        )

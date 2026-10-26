@@ -9,7 +9,6 @@ from __future__ import annotations
 import argparse
 import asyncio
 import json
-import sys
 
 from src.core.config import get_settings
 from src.eval.harness import EvalHarness
@@ -49,7 +48,7 @@ def main() -> None:
     print(f"  Cost per 1k success:   ${result.cost_per_1k_success_usd:.4f}")
     print(f"  Total cost:            ${result.total_cost_usd:.4f}")
     if result.errors_by_class:
-        print(f"  Errors by class:")
+        print("  Errors by class:")
         for cls, count in sorted(result.errors_by_class.items()):
             print(f"    {cls:20s}   {count}")
     print("=" * 60)

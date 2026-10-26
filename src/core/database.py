@@ -57,10 +57,14 @@ def init_db() -> None:
         """)
 
 
-def save_triage(ticket_text: str, result: dict[str, Any], language: str = "en", request_id: str | None = None) -> int:
+def save_triage(
+    ticket_text: str, result: dict[str, Any], language: str = "en", request_id: str | None = None
+) -> int:
     with _get_conn() as conn:
         cursor = conn.execute(
-            "INSERT INTO triage_history (ticket_text, result_json, created_at, language, request_id) VALUES (?, ?, ?, ?, ?)",
+            "INSERT INTO triage_history"
+            " (ticket_text, result_json, created_at, language, request_id)"
+            " VALUES (?, ?, ?, ?, ?)",
             (ticket_text, json.dumps(result), time.time() * 1000, language, request_id),
         )
         return cursor.lastrowid
@@ -69,7 +73,9 @@ def save_triage(ticket_text: str, result: dict[str, Any], language: str = "en", 
 def get_history(limit: int = 100) -> list[dict[str, Any]]:
     with _get_conn() as conn:
         rows = conn.execute(
-            "SELECT id, ticket_text, result_json, created_at, feedback, language, request_id FROM triage_history ORDER BY created_at DESC LIMIT ?",
+            "SELECT id, ticket_text, result_json, created_at,"
+            " feedback, language, request_id"
+            " FROM triage_history ORDER BY created_at DESC LIMIT ?",
             (limit,),
         ).fetchall()
         return [
@@ -100,7 +106,8 @@ def delete_by_ids(ids: list[int]) -> int:
         return 0
     with _get_conn() as conn:
         placeholders = ",".join("?" for _ in ids)
-        cursor = conn.execute(f"DELETE FROM triage_history WHERE id IN ({placeholders})", ids)
+        sql = f"DELETE FROM triage_history WHERE id IN ({placeholders})"  # noqa: S608
+        cursor = conn.execute(sql, ids)
         return cursor.rowcount
 
 
@@ -109,12 +116,19 @@ def get_stats() -> dict[str, Any]:
         row = conn.execute("""
             SELECT
                 COUNT(*) as total_requests,
-                COALESCE(SUM(json_extract(result_json, '$.metadata.cost_usd')), 0) as total_cost,
-                COALESCE(SUM(json_extract(result_json, '$.metadata.input_tokens')), 0) as total_input_tokens,
-                COALESCE(SUM(json_extract(result_json, '$.metadata.output_tokens')), 0) as total_output_tokens,
-                COALESCE(SUM(CASE WHEN json_extract(result_json, '$.metadata.fallback_used') = 1 THEN 1 ELSE 0 END), 0) as total_fallbacks,
-                COALESCE(SUM(CASE WHEN feedback = 'up' THEN 1 ELSE 0 END), 0) as thumbs_up,
-                COALESCE(SUM(CASE WHEN feedback = 'down' THEN 1 ELSE 0 END), 0) as thumbs_down
+                COALESCE(SUM(json_extract(result_json,
+                    '$.metadata.cost_usd')), 0) as total_cost,
+                COALESCE(SUM(json_extract(result_json,
+                    '$.metadata.input_tokens')), 0) as total_input_tokens,
+                COALESCE(SUM(json_extract(result_json,
+                    '$.metadata.output_tokens')), 0) as total_output_tokens,
+                COALESCE(SUM(CASE WHEN json_extract(result_json,
+                    '$.metadata.fallback_used') = 1
+                    THEN 1 ELSE 0 END), 0) as total_fallbacks,
+                COALESCE(SUM(CASE WHEN feedback = 'up'
+                    THEN 1 ELSE 0 END), 0) as thumbs_up,
+                COALESCE(SUM(CASE WHEN feedback = 'down'
+                    THEN 1 ELSE 0 END), 0) as thumbs_down
             FROM triage_history
         """).fetchone()
         models = conn.execute("""
@@ -139,8 +153,7 @@ def get_stats() -> dict[str, Any]:
             "thumbs_down": row["thumbs_down"],
             "requests_by_model": [{"name": m["model"], "value": m["count"]} for m in models],
             "latency_history": [
-                {"time": p["ts"], "value": round(p["latency_ms"] or 0)}
-                for p in latency_points
+                {"time": p["ts"], "value": round(p["latency_ms"] or 0)} for p in latency_points
             ],
         }
 
@@ -179,15 +192,18 @@ def get_analytics() -> dict[str, Any]:
             WHERE feedback IS NOT NULL GROUP BY feedback
         """).fetchall()
         languages = conn.execute("""
-            SELECT language, COUNT(*) as count FROM triage_history GROUP BY language ORDER BY count DESC
+            SELECT language, COUNT(*) as count
+            FROM triage_history GROUP BY language ORDER BY count DESC
         """).fetchall()
         severities = conn.execute("""
             SELECT json_extract(result_json, '$.result.severity') as sev, COUNT(*) as count
             FROM triage_history WHERE sev IS NOT NULL GROUP BY sev ORDER BY count DESC
         """).fetchall()
         intents = conn.execute("""
-            SELECT json_extract(result_json, '$.result.customer_intent') as intent, COUNT(*) as count
-            FROM triage_history WHERE intent IS NOT NULL GROUP BY intent ORDER BY count DESC
+            SELECT json_extract(result_json,
+                '$.result.customer_intent') as intent, COUNT(*) as count
+            FROM triage_history WHERE intent IS NOT NULL
+            GROUP BY intent ORDER BY count DESC
         """).fetchall()
         confidences = conn.execute("""
             SELECT json_extract(result_json, '$.result.confidence') as conf
@@ -207,7 +223,12 @@ def get_analytics() -> dict[str, Any]:
             "categories": [{"name": r["cat"], "value": r["count"]} for r in categories],
             "priorities": [{"name": r["pri"], "value": r["count"]} for r in priorities],
             "daily_volume": [{"date": r["day"], "count": r["count"]} for r in daily],
-            "latency": {"p50": round(p50), "p95": round(p95), "p99": round(p99), "avg": round(avg_lat)},
+            "latency": {
+                "p50": round(p50),
+                "p95": round(p95),
+                "p99": round(p99),
+                "avg": round(avg_lat),
+            },
             "cost_per_ticket": round(costs["total"] / costs["cnt"], 6) if costs["cnt"] > 0 else 0,
             "total_cost": costs["total"],
             "feedback": {r["feedback"]: r["count"] for r in feedback_rows},
@@ -234,38 +255,59 @@ def export_history(fmt: str = "json") -> str:
     if fmt == "csv":
         output = io.StringIO()
         writer = csv.writer(output)
-        writer.writerow(["id", "request_id", "ticket_text", "category", "priority", "product", "summary", "model", "latency_ms", "tokens", "feedback", "language", "timestamp"])
+        writer.writerow(
+            [
+                "id",
+                "request_id",
+                "ticket_text",
+                "category",
+                "priority",
+                "product",
+                "summary",
+                "model",
+                "latency_ms",
+                "tokens",
+                "feedback",
+                "language",
+                "timestamp",
+            ]
+        )
         for r in rows:
             result = json.loads(r["result_json"])
-            writer.writerow([
-                r["id"],
-                r["request_id"] or "",
-                r["ticket_text"],
-                result["result"]["category"],
-                result["result"]["priority"],
-                result["result"]["product"],
-                result["result"]["summary"],
-                result["metadata"]["model"],
-                round(result["metadata"]["latency_ms"]),
-                result["metadata"]["input_tokens"] + result["metadata"]["output_tokens"],
-                r["feedback"] or "",
-                r["language"] or "en",
-                r["created_at"],
-            ])
+            writer.writerow(
+                [
+                    r["id"],
+                    r["request_id"] or "",
+                    r["ticket_text"],
+                    result["result"]["category"],
+                    result["result"]["priority"],
+                    result["result"]["product"],
+                    result["result"]["summary"],
+                    result["metadata"]["model"],
+                    round(result["metadata"]["latency_ms"]),
+                    result["metadata"]["input_tokens"] + result["metadata"]["output_tokens"],
+                    r["feedback"] or "",
+                    r["language"] or "en",
+                    r["created_at"],
+                ]
+            )
         return output.getvalue()
     else:
-        return json.dumps([
-            {
-                "id": r["id"],
-                "request_id": r["request_id"],
-                "ticket_text": r["ticket_text"],
-                "result": json.loads(r["result_json"]),
-                "feedback": r["feedback"],
-                "language": r["language"] or "en",
-                "created_at": r["created_at"],
-            }
-            for r in rows
-        ], indent=2)
+        return json.dumps(
+            [
+                {
+                    "id": r["id"],
+                    "request_id": r["request_id"],
+                    "ticket_text": r["ticket_text"],
+                    "result": json.loads(r["result_json"]),
+                    "feedback": r["feedback"],
+                    "language": r["language"] or "en",
+                    "created_at": r["created_at"],
+                }
+                for r in rows
+            ],
+            indent=2,
+        )
 
 
 # Escalation rules
@@ -275,10 +317,14 @@ def get_rules() -> list[dict[str, Any]]:
         return [dict(r) for r in rows]
 
 
-def save_rule(name: str, priority: str | None, category: str | None, action: str, target: str) -> int:
+def save_rule(
+    name: str, priority: str | None, category: str | None, action: str, target: str
+) -> int:
     with _get_conn() as conn:
         cursor = conn.execute(
-            "INSERT INTO escalation_rules (name, priority, category, action, target) VALUES (?, ?, ?, ?, ?)",
+            "INSERT INTO escalation_rules"
+            " (name, priority, category, action, target)"
+            " VALUES (?, ?, ?, ?, ?)",
             (name, priority, category, action, target),
         )
         return cursor.lastrowid
@@ -292,17 +338,22 @@ def delete_rule(rule_id: int) -> bool:
 
 def toggle_rule(rule_id: int, enabled: bool) -> bool:
     with _get_conn() as conn:
-        cursor = conn.execute("UPDATE escalation_rules SET enabled = ? WHERE id = ?", (1 if enabled else 0, rule_id))
+        cursor = conn.execute(
+            "UPDATE escalation_rules SET enabled = ? WHERE id = ?", (1 if enabled else 0, rule_id)
+        )
         return cursor.rowcount > 0
 
 
 def check_escalation(priority: str, category: str) -> list[dict[str, Any]]:
     with _get_conn() as conn:
-        rows = conn.execute("""
+        rows = conn.execute(
+            """
             SELECT * FROM escalation_rules WHERE enabled = 1
             AND (priority IS NULL OR priority = ?)
             AND (category IS NULL OR category = ?)
-        """, (priority, category)).fetchall()
+        """,
+            (priority, category),
+        ).fetchall()
         return [dict(r) for r in rows]
 
 
