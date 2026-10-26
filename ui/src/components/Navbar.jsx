@@ -3,21 +3,16 @@ import { MessageSquareText, LayoutDashboard } from 'lucide-react';
 
 function Logo() {
   return (
-    <svg width="36" height="36" viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <rect width="36" height="36" rx="8" fill="url(#grad)" />
-      <path d="M10 18.5C10 14.5 13 11 18 11C23 11 26 14.5 26 18.5" stroke="white" strokeWidth="2.2" strokeLinecap="round" fill="none" />
-      <circle cx="14" cy="18" r="1.8" fill="white" />
-      <circle cx="22" cy="18" r="1.8" fill="white" />
-      <path d="M13 23C14 24.5 16 25.5 18 25.5C20 25.5 22 24.5 23 23" stroke="white" strokeWidth="2" strokeLinecap="round" fill="none" />
-      <path d="M8 14L10.5 16" stroke="white" strokeWidth="1.5" strokeLinecap="round" />
-      <path d="M28 14L25.5 16" stroke="white" strokeWidth="1.5" strokeLinecap="round" />
-      <path d="M18 8V11" stroke="white" strokeWidth="1.5" strokeLinecap="round" />
-      <defs>
-        <linearGradient id="grad" x1="0" y1="0" x2="36" y2="36">
-          <stop stopColor="#3b82f6" />
-          <stop offset="1" stopColor="#8b5cf6" />
-        </linearGradient>
-      </defs>
+    <svg width="36" height="36" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <rect width="32" height="32" rx="7" fill="#3b82f6" />
+      <rect x="7" y="11" width="18" height="13" rx="3.5" fill="#fff" />
+      <circle cx="12.5" cy="17.5" r="2.2" fill="#3b82f6" />
+      <circle cx="19.5" cy="17.5" r="2.2" fill="#3b82f6" />
+      <rect x="13.5" y="21" width="5" height="1.5" rx=".75" fill="#3b82f6" />
+      <line x1="16" y1="5" x2="16" y2="11" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" />
+      <circle cx="16" cy="4" r="2.2" fill="#fff" />
+      <line x1="4" y1="16" x2="7" y2="16" stroke="#fff" strokeWidth="2" strokeLinecap="round" />
+      <line x1="25" y1="16" x2="28" y2="16" stroke="#fff" strokeWidth="2" strokeLinecap="round" />
     </svg>
   );
 }
