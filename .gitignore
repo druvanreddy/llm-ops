@@ -1,0 +1,57 @@
+# Environment
+.env
+.env.local
+*.env
+
+# Virtual environment
+.venv/
+venv/
+
+# Node
+node_modules/
+ui/dist/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+dist/
+build/
+.eggs/
+
+# Testing
+.pytest_cache/
+htmlcov/
+.coverage
+coverage.xml
+
+# Type checking
+.mypy_cache/
+
+# Linting
+.ruff_cache/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Docker volumes
+prometheus_data/
+grafana_data/
+langfuse_db_data/
+
+# Results (keep baseline, ignore transient)
+results/dev.json
+results/load-test/
+
+# Never commit secrets
+*.pem
+*.key

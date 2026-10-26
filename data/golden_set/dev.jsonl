@@ -1,0 +1,5 @@
+{"id": "dev_001", "ticket_text": "I can't access my dashboard. It says 'Access Denied' even though I'm an admin. This is urgent, our team can't work.", "expected": {"category": "technical", "priority": "urgent", "product": "dashboard"}}
+{"id": "dev_002", "ticket_text": "When will the new analytics feature be available? I saw it mentioned in the blog post last month.", "expected": {"category": "product", "priority": "low", "product": "analytics"}}
+{"id": "dev_003", "ticket_text": "My refund from last week hasn't appeared in my bank account yet. Transaction ref: TXN-90123. It's been 7 business days.", "expected": {"category": "refund", "priority": "high", "product": "payments"}}
+{"id": "dev_004", "ticket_text": "The search function returns no results even when I search for items I know exist. This started yesterday afternoon.", "expected": {"category": "technical", "priority": "high", "product": "search"}}
+{"id": "dev_005", "ticket_text": "I want to downgrade from the Pro plan to the Basic plan. Will I lose my data? When does the change take effect?", "expected": {"category": "account", "priority": "medium", "product": "subscription"}}

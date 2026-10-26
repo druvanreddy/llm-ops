@@ -1,0 +1,74 @@
+groups:
+  - name: llm_ops_slo
+    rules:
+      # SLO burn-rate alert: fires when error budget consumption is too fast
+      # 99% availability over 7 days = 1% error budget
+      # Alert if burning >14.4x in 1h (will exhaust budget in ~12h)
+      - alert: SLOBurnRateHigh
+        expr: |
+          (
+            sum(rate(llm_requests_total{status!="success"}[1h]))
+            /
+            sum(rate(llm_requests_total[1h]))
+          ) > (14.4 * 0.01)
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "SLO burn rate is too high"
+          description: >
+            Error rate over the last hour is {{ $value | humanizePercentage }}.
+            At this rate, the 7-day error budget will be exhausted in ~12 hours.
+            Check: provider status, circuit breaker state, recent deployments.
+          runbook: "See RUNBOOK.md#slo-burn-rate-high"
+
+      # Cost spike alert: fires when cost/minute exceeds 3x trailing 1h average
+      - alert: CostSpikeDetected
+        expr: |
+          sum(rate(llm_cost_dollars_total[5m])) * 60
+          >
+          3 * (sum(rate(llm_cost_dollars_total[1h])) * 60)
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "LLM cost spike detected"
+          description: >
+            Current cost/minute ({{ $value | humanize }} USD) is >3x the trailing
+            1-hour average. Check: input token sizes, model routing, retry storms.
+          runbook: "See RUNBOOK.md#cost-spike-detected"
+
+      # High fallback rate: primary provider may be degraded
+      - alert: FallbackRateHigh
+        expr: |
+          sum(rate(llm_fallback_total[5m]))
+          /
+          sum(rate(llm_requests_total[5m]))
+          > 0.10
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Fallback rate exceeds 10%"
+          description: >
+            {{ $value | humanizePercentage }} of requests are hitting the fallback
+            provider. Primary may be degraded. Check circuit breaker state and
+            provider status page.
+          runbook: "See RUNBOOK.md#fallback-rate-high"
+
+      # Schema validation failures
+      - alert: SchemaValidRateLow
+        expr: |
+          sum(rate(llm_schema_valid_total{attempt="first"}[15m]))
+          /
+          (sum(rate(llm_schema_valid_total[15m])) + sum(rate(llm_errors_total{error_class="schema_fail"}[15m])))
+          < 0.95
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Schema valid rate below 95%"
+          description: >
+            First-try schema validation is at {{ $value | humanizePercentage }}.
+            Check: prompt changes, model updates, response_format configuration.
+          runbook: "See RUNBOOK.md#schema-valid-rate-low"
