@@ -6,6 +6,7 @@ import io
 import json
 import sqlite3
 import time
+from collections.abc import Generator
 from pathlib import Path
 from typing import Any
 
@@ -13,7 +14,7 @@ DB_PATH = Path(__file__).resolve().parent.parent.parent / "triage_history.db"
 
 
 @contextlib.contextmanager
-def _get_conn():
+def _get_conn() -> Generator[sqlite3.Connection, None, None]:
     conn = sqlite3.connect(str(DB_PATH))
     conn.row_factory = sqlite3.Row
     conn.execute("PRAGMA journal_mode=WAL")
@@ -67,7 +68,7 @@ def save_triage(
             " VALUES (?, ?, ?, ?, ?)",
             (ticket_text, json.dumps(result), time.time() * 1000, language, request_id),
         )
-        return cursor.lastrowid
+        return cursor.lastrowid or 0
 
 
 def get_history(limit: int = 100) -> list[dict[str, Any]]:
@@ -98,7 +99,7 @@ def set_feedback(item_id: int, feedback: str | None) -> bool:
             "UPDATE triage_history SET feedback = ? WHERE id = ?",
             (feedback, item_id),
         )
-        return cursor.rowcount > 0
+        return bool(cursor.rowcount > 0)
 
 
 def delete_by_ids(ids: list[int]) -> int:
@@ -108,7 +109,7 @@ def delete_by_ids(ids: list[int]) -> int:
         placeholders = ",".join("?" for _ in ids)
         sql = f"DELETE FROM triage_history WHERE id IN ({placeholders})"  # noqa: S608
         cursor = conn.execute(sql, ids)
-        return cursor.rowcount
+        return int(cursor.rowcount)
 
 
 def get_stats() -> dict[str, Any]:
@@ -327,13 +328,13 @@ def save_rule(
             " VALUES (?, ?, ?, ?, ?)",
             (name, priority, category, action, target),
         )
-        return cursor.lastrowid
+        return cursor.lastrowid or 0
 
 
 def delete_rule(rule_id: int) -> bool:
     with _get_conn() as conn:
         cursor = conn.execute("DELETE FROM escalation_rules WHERE id = ?", (rule_id,))
-        return cursor.rowcount > 0
+        return bool(cursor.rowcount > 0)
 
 
 def toggle_rule(rule_id: int, enabled: bool) -> bool:
@@ -341,7 +342,7 @@ def toggle_rule(rule_id: int, enabled: bool) -> bool:
         cursor = conn.execute(
             "UPDATE escalation_rules SET enabled = ? WHERE id = ?", (1 if enabled else 0, rule_id)
         )
-        return cursor.rowcount > 0
+        return bool(cursor.rowcount > 0)
 
 
 def check_escalation(priority: str, category: str) -> list[dict[str, Any]]:
@@ -360,4 +361,4 @@ def check_escalation(priority: str, category: str) -> list[dict[str, Any]]:
 def clear_history() -> int:
     with _get_conn() as conn:
         cursor = conn.execute("DELETE FROM triage_history")
-        return cursor.rowcount
+        return int(cursor.rowcount)

@@ -25,12 +25,16 @@ litellm.drop_params = True
 
 
 def _is_retryable(exc: BaseException) -> bool:
-    if isinstance(exc, litellm.RateLimitError):
+    if isinstance(exc, litellm.RateLimitError):  # type: ignore[attr-defined]
         return True
-    retryable = (litellm.ServiceUnavailableError, litellm.APIConnectionError, litellm.Timeout)
+    retryable = (
+        litellm.ServiceUnavailableError,  # type: ignore[attr-defined]
+        litellm.APIConnectionError,  # type: ignore[attr-defined]
+        litellm.Timeout,  # type: ignore[attr-defined]
+    )
     if isinstance(exc, retryable):
         return True
-    if isinstance(exc, litellm.InternalServerError):
+    if isinstance(exc, litellm.InternalServerError):  # type: ignore[attr-defined]
         return True
     return False
 
@@ -239,12 +243,12 @@ class LLMGateway:
 
     @staticmethod
     def _classify_error(exc: BaseException) -> str:
-        if isinstance(exc, litellm.RateLimitError):
+        if isinstance(exc, litellm.RateLimitError):  # type: ignore[attr-defined]
             return "rate_limit"
-        if isinstance(exc, litellm.Timeout):
+        if isinstance(exc, litellm.Timeout):  # type: ignore[attr-defined]
             return "timeout"
-        if isinstance(exc, litellm.ServiceUnavailableError | litellm.InternalServerError):
+        if isinstance(exc, litellm.ServiceUnavailableError | litellm.InternalServerError):  # type: ignore[attr-defined]
             return "provider_5xx"
-        if isinstance(exc, litellm.BadRequestError):
+        if isinstance(exc, litellm.BadRequestError):  # type: ignore[attr-defined]
             return "bad_request"
         return "unknown"
