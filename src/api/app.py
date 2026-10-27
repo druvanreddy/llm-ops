@@ -4,6 +4,7 @@ import logging
 import time
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
+from typing import Any
 
 from fastapi import Depends, FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
@@ -63,7 +64,7 @@ limiter = Limiter(key_func=get_remote_address)
 
 
 class RequestLoggingMiddleware(BaseHTTPMiddleware):
-    async def dispatch(self, request: Request, call_next):
+    async def dispatch(self, request: Request, call_next: Any) -> Response:
         start = time.perf_counter()
         response = await call_next(request)
         elapsed_ms = (time.perf_counter() - start) * 1000
@@ -75,7 +76,7 @@ class RequestLoggingMiddleware(BaseHTTPMiddleware):
                 response.status_code,
                 elapsed_ms,
             )
-        return response
+        return response  # type: ignore[no-any-return]
 
 
 @asynccontextmanager
@@ -186,7 +187,7 @@ async def readiness(
 
 
 @app.get("/api/v1/prompt-versions", tags=["triage"])
-async def list_prompt_versions(request: Request) -> dict:
+async def list_prompt_versions(request: Request) -> dict[str, Any]:
     settings: Settings = request.app.state.settings
     versions = registry.list_versions("triage")
     return {
@@ -209,7 +210,7 @@ async def list_prompt_versions(request: Request) -> dict:
 async def triage_ticket(
     request: Request,
     body: TriageRequest,
-) -> TriageResponse:
+) -> dict[str, Any]:
     service: TriageService = request.app.state.service
     settings: Settings = request.app.state.settings
 
@@ -229,7 +230,6 @@ async def triage_ticket(
         row_id = save_triage(
             body.ticket_text, response.model_dump(), language=lang, request_id=request_id
         )
-        # Check escalation rules
         triggered = check_escalation(
             response.result.priority.value,
             response.result.category.value,
@@ -252,22 +252,22 @@ async def triage_ticket(
 
 
 @app.get("/api/v1/history", tags=["history"])
-async def list_history() -> list[dict]:
+async def list_history() -> list[dict[str, Any]]:
     return get_history()
 
 
 @app.get("/api/v1/stats", tags=["analytics"])
-async def stats() -> dict:
+async def stats() -> dict[str, Any]:
     return get_stats()
 
 
 @app.get("/api/v1/analytics", tags=["analytics"])
-async def analytics() -> dict:
+async def analytics() -> dict[str, Any]:
     return get_analytics()
 
 
 @app.post("/api/v1/history/delete", tags=["history"])
-async def delete_history_items(body: DeleteHistoryRequest) -> dict:
+async def delete_history_items(body: DeleteHistoryRequest) -> dict[str, Any]:
     if not body.ids:
         return {"deleted": 0}
     count = delete_by_ids(body.ids)
@@ -275,7 +275,7 @@ async def delete_history_items(body: DeleteHistoryRequest) -> dict:
 
 
 @app.delete("/api/v1/history", tags=["history"])
-async def delete_history() -> dict:
+async def delete_history() -> dict[str, Any]:
     count = clear_history()
     return {"deleted": count}
 
@@ -284,7 +284,7 @@ async def delete_history() -> dict:
 
 
 @app.post("/api/v1/feedback", tags=["feedback"])
-async def submit_feedback(body: FeedbackRequest) -> dict:
+async def submit_feedback(body: FeedbackRequest) -> dict[str, Any]:
     ok = set_feedback(body.id, body.feedback)
     return {"ok": ok}
 
@@ -310,13 +310,13 @@ async def export_data(fmt: str) -> Response:
 
 
 @app.post("/api/v1/bulk-triage", tags=["triage"])
-async def bulk_triage(request: Request, body: BulkTriageRequest) -> dict:
+async def bulk_triage(request: Request, body: BulkTriageRequest) -> dict[str, Any]:
     import asyncio
 
     service: TriageService = request.app.state.service
     semaphore = asyncio.Semaphore(5)
 
-    async def process_one(ticket_text: str) -> dict:
+    async def process_one(ticket_text: str) -> dict[str, Any]:
         async with semaphore:
             try:
                 response = await service.triage(ticket_text, prompt_version=body.prompt_version)
@@ -337,12 +337,12 @@ async def bulk_triage(request: Request, body: BulkTriageRequest) -> dict:
 
 
 @app.get("/api/v1/rules", tags=["rules"])
-async def list_rules() -> list[dict]:
+async def list_rules() -> list[dict[str, Any]]:
     return get_rules()
 
 
 @app.post("/api/v1/rules", tags=["rules"])
-async def create_rule(body: RuleCreateRequest) -> dict:
+async def create_rule(body: RuleCreateRequest) -> dict[str, Any]:
     rule_id = save_rule(
         name=body.name,
         priority=body.priority,
@@ -354,12 +354,12 @@ async def create_rule(body: RuleCreateRequest) -> dict:
 
 
 @app.delete("/api/v1/rules/{rule_id}", tags=["rules"])
-async def remove_rule(rule_id: int) -> dict:
+async def remove_rule(rule_id: int) -> dict[str, Any]:
     return {"ok": delete_rule(rule_id)}
 
 
 @app.post("/api/v1/rules/{rule_id}/toggle", tags=["rules"])
-async def toggle_rule_endpoint(rule_id: int, body: RuleToggleRequest) -> dict:
+async def toggle_rule_endpoint(rule_id: int, body: RuleToggleRequest) -> dict[str, Any]:
     return {"ok": toggle_rule(rule_id, body.enabled)}
 
 
@@ -367,12 +367,12 @@ async def toggle_rule_endpoint(rule_id: int, body: RuleToggleRequest) -> dict:
 
 
 @app.post("/api/v1/ab-test", tags=["triage"])
-async def ab_test(request: Request, body: ABTestRequest) -> dict:
+async def ab_test(request: Request, body: ABTestRequest) -> dict[str, Any]:
     import asyncio
 
     service: TriageService = request.app.state.service
 
-    async def run_version(version: str) -> dict:
+    async def run_version(version: str) -> dict[str, Any]:
         try:
             resp = await service.triage(body.ticket_text, prompt_version=version)
             return {"version": version, "result": resp.model_dump(), "error": None}
@@ -389,7 +389,7 @@ async def ab_test(request: Request, body: ABTestRequest) -> dict:
 
 
 @app.post("/api/v1/eval", tags=["eval"])
-async def run_eval(request: Request) -> dict:
+async def run_eval(request: Request) -> dict[str, Any]:
     settings: Settings = request.app.state.settings
     try:
         harness = EvalHarness(settings)
@@ -403,7 +403,7 @@ async def run_eval(request: Request) -> dict:
 
 
 @app.post("/api/v1/eval/dev", tags=["eval"])
-async def run_eval_dev(request: Request) -> dict:
+async def run_eval_dev(request: Request) -> dict[str, Any]:
     settings: Settings = request.app.state.settings
     try:
         harness = EvalHarness(settings)
