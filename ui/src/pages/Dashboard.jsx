@@ -5,7 +5,7 @@ import {
 } from 'lucide-react';
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer,
-  PieChart, Pie, Cell, LineChart, Line, CartesianGrid, Area, AreaChart,
+  PieChart, Pie, Cell, CartesianGrid, Area, AreaChart,
 } from 'recharts';
 import { fetchHealth, fetchReadiness, fetchMetrics, parsePrometheusMetrics } from '../lib/api';
 import StatCard from '../components/StatCard';
@@ -99,17 +99,12 @@ export default function Dashboard() {
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 animate-fade-in">
       {/* Header */}
-      <div className="flex items-center justify-between mb-8">
-        <div>
-          <h1 className="text-3xl font-bold text-white mb-1">Operations Dashboard</h1>
-          <p className="text-slate-400 text-sm">
-            Real-time monitoring for the LLM Ops triage service.
-          </p>
-        </div>
-        <div className="flex items-center gap-3">
+      <div className="flex items-center justify-between mb-6">
+        <h1 className="text-2xl font-bold text-white">Dashboard</h1>
+        <div className="flex items-center gap-2">
           <button
             onClick={() => setAutoRefresh(!autoRefresh)}
-            className={`flex items-center gap-2 text-xs px-3 py-1.5 rounded-lg border transition-colors ${
+            className={`flex items-center gap-1.5 text-xs px-2.5 py-1.5 rounded-lg border transition-colors ${
               autoRefresh
                 ? 'bg-green-900/30 border-green-700 text-green-300'
                 : 'bg-slate-800 border-slate-700 text-slate-400'
@@ -120,7 +115,7 @@ export default function Dashboard() {
           </button>
           <button
             onClick={refresh}
-            className="flex items-center gap-2 text-xs px-3 py-1.5 rounded-lg border border-slate-700 bg-slate-800 text-slate-300 hover:bg-slate-700 transition-colors"
+            className="flex items-center gap-1.5 text-xs px-2.5 py-1.5 rounded-lg border border-slate-700 bg-slate-800 text-slate-300 hover:bg-slate-700 transition-colors"
           >
             <RefreshCw className="w-3 h-3" />
             Refresh
@@ -134,34 +129,34 @@ export default function Dashboard() {
       </div>
 
       {error && (
-        <div className="mb-6 bg-red-900/30 border border-red-700 rounded-xl p-4 flex items-center gap-3">
-          <AlertCircle className="w-5 h-5 text-red-400" />
+        <div className="mb-4 bg-red-900/30 border border-red-700 rounded-xl p-3 flex items-center gap-3">
+          <AlertCircle className="w-4 h-4 text-red-400 shrink-0" />
           <span className="text-red-300 text-sm">{error}</span>
           <span className="text-red-500 text-xs ml-auto">Backend may be offline</span>
         </div>
       )}
 
       {/* Service Status */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-        <ServiceStatus label="Health" sub="Is the backend server running?" data={health} field="status" />
-        <ServiceStatus label="Readiness" sub="Can it accept triage requests?" data={readiness} field="status" />
-        <div className="bg-slate-800 rounded-xl border border-slate-700 p-4">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-5">
+        <ServiceStatus label="Health" data={health} field="status" />
+        <ServiceStatus label="Readiness" data={readiness} field="status" />
+        <div className="bg-slate-800 rounded-xl border border-slate-700 p-3.5">
           <div className="text-xs text-slate-400 mb-1">Version</div>
-          <div className="text-lg font-mono text-white">{health?.version || '—'}</div>
-          <div className="text-xs text-slate-500 mt-1">SHA: {health?.git_sha || '—'}</div>
+          <div className="text-base font-mono text-white">{health?.version || '—'}</div>
+          <div className="text-xs text-slate-500 mt-0.5 truncate">SHA: {health?.git_sha || '—'}</div>
         </div>
-        <div className="bg-slate-800 rounded-xl border border-slate-700 p-4">
-          <div className="text-xs text-slate-400 mb-1">Readiness Checks</div>
+        <div className="bg-slate-800 rounded-xl border border-slate-700 p-3.5">
+          <div className="text-xs text-slate-400 mb-1">System Checks</div>
           {readiness?.checks ? (
-            <div className="space-y-1 mt-1">
+            <div className="space-y-0.5 mt-1">
               {Object.entries(readiness.checks).map(([k, v]) => (
-                <div key={k} className="flex items-center gap-2 text-xs">
+                <div key={k} className="flex items-center gap-1.5 text-xs">
                   {v ? (
-                    <CheckCircle2 className="w-3.5 h-3.5 text-green-400" />
+                    <CheckCircle2 className="w-3 h-3 text-green-400 shrink-0" />
                   ) : (
-                    <XCircle className="w-3.5 h-3.5 text-red-400" />
+                    <XCircle className="w-3 h-3 text-red-400 shrink-0" />
                   )}
-                  <span className="text-slate-300">{k.replace(/_/g, ' ')}</span>
+                  <span className="text-slate-300 truncate">{k.replace(/_/g, ' ')}</span>
                 </div>
               ))}
             </div>
@@ -172,19 +167,18 @@ export default function Dashboard() {
       </div>
 
       {/* Key Metrics */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4 mb-6 stagger-children">
-        <StatCard icon={Hash} label="Requests" value={fmt(totalRequests)} sub="Tickets triaged so far" color="text-blue-400" />
-        <StatCard icon={AlertCircle} label="Errors" value={fmt(totalErrors)} sub="Failed triage attempts" color="text-red-400" />
-        <StatCard icon={DollarSign} label="Total Cost" value={`$${totalCost.toFixed(4)}`} sub="Money spent on LLM calls" color="text-green-400" />
-        <StatCard icon={Zap} label="Tokens" value={fmtK(totalTokens)} sub="Text units processed by LLM" color="text-yellow-400" />
-        <StatCard icon={ArrowRightLeft} label="Fallbacks" value={fmt(totalFallbacks)} sub="Times backup model was used" color="text-amber-400" />
-        <StatCard icon={Shield} label="Schema Valid" value={fmt(schemaValid)} sub="Properly formatted responses" color="text-cyan-400" />
+      <div className="grid grid-cols-3 lg:grid-cols-6 gap-3 mb-5 stagger-children">
+        <StatCard icon={Hash} label="Requests" value={fmt(totalRequests)} sub="Total triaged" color="text-blue-400" />
+        <StatCard icon={AlertCircle} label="Errors" value={fmt(totalErrors)} sub="Failed calls" color="text-red-400" />
+        <StatCard icon={DollarSign} label="Cost" value={`$${totalCost.toFixed(4)}`} sub="LLM spend" color="text-green-400" />
+        <StatCard icon={Zap} label="Tokens" value={fmtK(totalTokens)} sub="Total used" color="text-yellow-400" />
+        <StatCard icon={ArrowRightLeft} label="Fallbacks" value={fmt(totalFallbacks)} sub="Backup model" color="text-amber-400" />
+        <StatCard icon={Shield} label="Valid" value={fmt(schemaValid)} sub="Schema OK" color="text-cyan-400" />
       </div>
 
       {/* Charts Row */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
-        {/* Latency Over Time */}
-        <ChartCard title="Latency per Request (ms)" subtitle="Response time for each triage call — lower is better" icon={Clock}>
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-5">
+        <ChartCard title="Latency (ms)" icon={Clock}>
           {latencyHistory.length > 0 ? (
             <ResponsiveContainer width="100%" height={200}>
               <AreaChart data={latencyHistory}>
@@ -202,7 +196,7 @@ export default function Dashboard() {
                   labelStyle={ct.tooltipLabel}
                   formatter={(val) => [`${val} ms`, 'Latency']}
                 />
-                <Area type="monotone" dataKey="value" stroke="#3b82f6" strokeWidth={2} fill="url(#latencyGrad)" dot={{ fill: '#3b82f6', r: 4 }} activeDot={{ r: 6, fill: '#60a5fa' }} />
+                <Area type="monotone" dataKey="value" stroke="#3b82f6" strokeWidth={2} fill="url(#latencyGrad)" dot={{ fill: '#3b82f6', r: 3 }} activeDot={{ r: 5, fill: '#60a5fa' }} />
               </AreaChart>
             </ResponsiveContainer>
           ) : (
@@ -210,8 +204,7 @@ export default function Dashboard() {
           )}
         </ChartCard>
 
-        {/* Requests by Model */}
-        <ChartCard title="Requests by Model" subtitle="Which LLM model handled each request" icon={Cpu}>
+        <ChartCard title="Requests by Model" icon={Cpu}>
           {requestsByModel.length > 0 ? (
             <ResponsiveContainer width="100%" height={200}>
               <BarChart data={requestsByModel}>
@@ -226,8 +219,7 @@ export default function Dashboard() {
           )}
         </ChartCard>
 
-        {/* Error Distribution */}
-        <ChartCard title="Error Distribution" subtitle="Breakdown of what went wrong" icon={AlertCircle}>
+        <ChartCard title="Error Breakdown" icon={AlertCircle}>
           {errorsByClass.length > 0 ? (
             <ResponsiveContainer width="100%" height={200}>
               <PieChart>
@@ -249,25 +241,24 @@ export default function Dashboard() {
               </PieChart>
             </ResponsiveContainer>
           ) : (
-            <EmptyChart label="No errors recorded" />
+            <EmptyChart label="No errors" />
           )}
         </ChartCard>
       </div>
 
       {/* Bottom Row */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Token Breakdown */}
-        <ChartCard title="Token Usage" subtitle="Input = your ticket text sent to LLM · Output = LLM's response" icon={TrendingUp}>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <ChartCard title="Token Usage" icon={TrendingUp}>
           <div className="flex items-center justify-around py-6">
             {dbStats ? (
               <>
                 <div className="text-center">
                   <div className="text-2xl font-bold text-white">{fmtK(dbStats.total_input_tokens)}</div>
-                  <div className="text-xs text-slate-400 mt-1 uppercase">INPUT</div>
+                  <div className="text-xs text-slate-400 mt-1 uppercase">Input</div>
                 </div>
                 <div className="text-center">
                   <div className="text-2xl font-bold text-white">{fmtK(dbStats.total_output_tokens)}</div>
-                  <div className="text-xs text-slate-400 mt-1 uppercase">OUTPUT</div>
+                  <div className="text-xs text-slate-400 mt-1 uppercase">Output</div>
                 </div>
               </>
             ) : tokensByDir.length > 0 ? tokensByDir.map((t) => (
@@ -279,8 +270,7 @@ export default function Dashboard() {
           </div>
         </ChartCard>
 
-        {/* Request Status Breakdown */}
-        <ChartCard title="Request Status" subtitle="Success vs. failed triage calls" icon={Activity}>
+        <ChartCard title="Request Status" icon={Activity}>
           {requestsByStatus.length > 0 ? (
             <ResponsiveContainer width="100%" height={200}>
               <BarChart data={requestsByStatus} layout="vertical">
@@ -303,32 +293,28 @@ export default function Dashboard() {
   );
 }
 
-function ServiceStatus({ label, sub, data, field }) {
+function ServiceStatus({ label, data, field }) {
   const val = data?.[field];
   const ok = val === 'healthy' || val === 'ready';
   return (
-    <div className="bg-slate-800 rounded-xl border border-slate-700 p-4">
+    <div className="bg-slate-800 rounded-xl border border-slate-700 p-3.5">
       <div className="text-xs text-slate-400 mb-1">{label}</div>
       <div className="flex items-center gap-2">
-        <div className={`w-2.5 h-2.5 rounded-full ${ok ? 'bg-green-400' : data ? 'bg-red-400' : 'bg-slate-600'}`} />
-        <span className={`text-lg font-semibold ${ok ? 'text-green-400' : data ? 'text-red-400' : 'text-slate-500'}`}>
+        <div className={`w-2 h-2 rounded-full ${ok ? 'bg-green-400' : data ? 'bg-red-400' : 'bg-slate-600'}`} />
+        <span className={`text-base font-semibold ${ok ? 'text-green-400' : data ? 'text-red-400' : 'text-slate-500'}`}>
           {val || (data ? 'Error' : 'Unknown')}
         </span>
       </div>
-      {sub && <p className="text-xs text-slate-500 mt-1">{sub}</p>}
     </div>
   );
 }
 
-function ChartCard({ title, subtitle, icon: Icon, children }) {
+function ChartCard({ title, icon: Icon, children }) {
   return (
-    <div className="bg-slate-800 rounded-xl border border-slate-700 p-5">
-      <div className="mb-4">
-        <div className="flex items-center gap-2">
-          {Icon && <Icon className="w-4 h-4 text-slate-400" />}
-          <span className="text-sm font-semibold text-slate-300">{title}</span>
-        </div>
-        {subtitle && <p className="text-xs text-slate-500 mt-1 ml-6">{subtitle}</p>}
+    <div className="bg-slate-800 rounded-xl border border-slate-700 p-4">
+      <div className="flex items-center gap-2 mb-3">
+        {Icon && <Icon className="w-4 h-4 text-slate-400" />}
+        <span className="text-sm font-semibold text-slate-300">{title}</span>
       </div>
       {children}
     </div>
@@ -338,10 +324,10 @@ function ChartCard({ title, subtitle, icon: Icon, children }) {
 function EmptyChart({ label = 'No data yet' }) {
   return (
     <div className="h-[200px] flex flex-col items-center justify-center text-slate-500">
-      <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="mb-2 opacity-40">
+      <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="mb-2 opacity-40">
         <path d="M3 3v18h18" /><path d="M7 16l4-8 4 4 4-6" />
       </svg>
-      <p className="text-sm">{label}</p>
+      <p className="text-xs">{label}</p>
     </div>
   );
 }

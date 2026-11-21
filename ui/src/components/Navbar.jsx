@@ -1,6 +1,6 @@
 import { useContext, useState } from 'react';
 import { NavLink } from 'react-router-dom';
-import { MessageSquareText, LayoutDashboard, BarChart3, Shield, FlaskConical, Sun, Moon, Menu, X } from 'lucide-react';
+import { MessageSquareText, LayoutDashboard, BarChart3, Shield, FlaskConical, BookOpen, Sun, Moon, Menu, X } from 'lucide-react';
 import { ThemeContext } from '../App';
 
 function Logo() {
@@ -38,13 +38,14 @@ const NAV_LINKS = [
   { to: '/analytics', icon: BarChart3, label: 'Analytics' },
   { to: '/rules', icon: Shield, label: 'Rules' },
   { to: '/ab-test', icon: FlaskConical, label: 'A/B Test' },
+  { to: '/manual', icon: BookOpen, label: 'Manual' },
 ];
 
 export default function Navbar() {
   const [mobileOpen, setMobileOpen] = useState(false);
 
   const linkClass = ({ isActive }) =>
-    `flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+    `flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
       isActive
         ? 'bg-blue-600 text-white'
         : 'text-slate-400 hover:text-white hover:bg-slate-700'
@@ -71,13 +72,10 @@ export default function Navbar() {
                 Triage Platform
               </span>
             </div>
-            <span className="text-xs bg-blue-500/20 text-blue-300 px-2 py-0.5 rounded-full border border-blue-500/30 ml-1">
-              v0.1.0
-            </span>
           </div>
 
           {/* Desktop nav */}
-          <div className="hidden md:flex items-center gap-2">
+          <div className="hidden md:flex items-center gap-1">
             {NAV_LINKS.map(({ to, icon: Icon, label }) => (
               <NavLink key={to} to={to} className={linkClass}>
                 <Icon className="w-4 h-4" />

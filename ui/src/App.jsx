@@ -6,6 +6,7 @@ import Dashboard from './pages/Dashboard';
 import Analytics from './pages/Analytics';
 import Rules from './pages/Rules';
 import ABTest from './pages/ABTest';
+import Manual from './pages/Manual';
 
 export const ThemeContext = createContext({ dark: true, toggle: () => {} });
 
@@ -30,6 +31,7 @@ export default function App() {
             <Route path="/analytics" element={<Analytics />} />
             <Route path="/rules" element={<Rules />} />
             <Route path="/ab-test" element={<ABTest />} />
+            <Route path="/manual" element={<Manual />} />
           </Routes>
         </div>
       </BrowserRouter>
