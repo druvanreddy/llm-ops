@@ -237,7 +237,8 @@ oops-llm/
 │   │       ├── Dashboard.jsx     # Operations monitoring dashboard
 │   │       ├── Analytics.jsx     # Deep analytics + charts
 │   │       ├── Rules.jsx         # Escalation rule management
-│   │       └── ABTest.jsx        # A/B prompt comparison
+│   │       ├── ABTest.jsx        # A/B prompt comparison
+│   │       └── Manual.jsx        # Step-by-step user guide
 │   ├── vite.config.js            # Vite config with API proxy
 │   └── package.json
 │
@@ -450,7 +451,7 @@ Response:
 The main page. Paste a support ticket and get instant AI classification. Features:
 - **Single mode**: one ticket at a time with full result card (model, latency, cost, tokens, confidence bar, product area, entities, summary, draft reply, feedback)
 - **Bulk mode**: paste multiple tickets (one per line, auto-numbered), process all at once, click any result to drill down into full details
-- **Example tickets**: 10 pre-built examples — click to use (appends in bulk mode)
+- **Example tickets**: 5 pre-built examples — click to use (appends in bulk mode)
 - **History sidebar**: browse past triage results, click to re-view, select to delete
 - **Export**: download history as CSV or JSON
 
@@ -484,6 +485,17 @@ Compare prompt versions head-to-head:
 - Side-by-side result comparison
 - Quick comparison hints: which version has higher confidence, is faster, or cheaper
 - Sample tickets for quick testing
+
+### Manual (`/manual`)
+
+Interactive user guide with collapsible sections:
+
+- **What is this app?** — plain-language overview for new users
+- **Quick Start** — 3-step guide to triage your first ticket
+- **Features Guide** — detailed walkthrough of every page (Triage, Dashboard, Analytics, Rules, A/B Test)
+- **How It Works** — visual flow diagram of the triage pipeline
+- **Key Concepts** — explanations of prompt versions, confidence scores, circuit breakers, tokens, etc.
+- **Tips & Tricks** — practical advice for getting the most out of the platform
 
 ---
 
