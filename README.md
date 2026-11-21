@@ -210,6 +210,12 @@ oops-llm/
 │   ├── compare_eval.py           # CLI: compare eval results to baseline
 │   └── load_test.js              # k6 load test script
 │
+├── ops/                          # Infrastructure configs
+│   ├── otel-collector.yml        # OpenTelemetry collector config
+│   └── prometheus/
+│       ├── prometheus.yml        # Prometheus scrape config
+│       └── alerts.yml            # Alerting rules
+│
 ├── tests/
 │   └── unit/
 │       ├── test_api.py           # 25 FastAPI integration tests
