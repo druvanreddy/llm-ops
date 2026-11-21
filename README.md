@@ -75,7 +75,7 @@ The entire pipeline runs in **< 2 seconds** per ticket, with full observability 
 
 ## Architecture
 
-```
+```text
 ┌─────────────────────────────────────────────────────────────────────┐
 │                         React Frontend (Vite)                       │
 │   ┌──────────┐ ┌───────────┐ ┌───────────┐ ┌───────┐ ┌─────────┐  │
@@ -125,7 +125,7 @@ The entire pipeline runs in **< 2 seconds** per ticket, with full observability 
 
 ### Data Flow
 
-```
+```text
 User Input → Sanitize → Render Prompt → LLM Call → Parse JSON → Validate Schema
      → Save to DB → Check Escalation Rules → Return Response
 ```
@@ -134,30 +134,32 @@ User Input → Sanitize → Render Prompt → LLM Call → Parse JSON → Valida
 
 ## Tech Stack
 
-| Layer           | Technology                                                      |
-| --------------- | --------------------------------------------------------------- |
-| **Frontend**    | React 18, Vite, Tailwind CSS v4, React Router, Recharts, Lucide |
-| **Backend**     | Python 3.11+, FastAPI, Uvicorn, Pydantic v2                    |
-| **LLM SDK**     | LiteLLM (provider-agnostic: Groq, OpenAI, Anthropic, etc.)     |
-| **Database**    | SQLite with WAL mode                                            |
-| **Prompts**     | Versioned YAML templates with Jinja2 rendering                  |
-| **Metrics**     | Prometheus (counters, histograms, gauges)                       |
-| **Tracing**     | OpenTelemetry with GenAI semantic conventions                   |
-| **Testing**     | pytest + pytest-asyncio, httpx ASGITransport                    |
-| **Load Test**   | k6 (JavaScript)                                                 |
-| **Containers**  | Docker multi-stage build, Docker Compose                        |
+| Layer | Technology |
+| --- | --- |
+| **Frontend** | React 18, Vite, Tailwind CSS v4, React Router, Recharts, Lucide |
+| **Backend** | Python 3.11+, FastAPI, Uvicorn, Pydantic v2 |
+| **LLM SDK** | LiteLLM (provider-agnostic: Groq, OpenAI, Anthropic, etc.) |
+| **Database** | SQLite with WAL mode |
+| **Prompts** | Versioned YAML templates with Jinja2 rendering |
+| **Metrics** | Prometheus (counters, histograms, gauges) |
+| **Tracing** | OpenTelemetry with GenAI semantic conventions |
+| **Testing** | pytest + pytest-asyncio, httpx ASGITransport |
+| **Load Test** | k6 (JavaScript) |
+| **Containers** | Docker multi-stage build, Docker Compose |
 
 ---
 
 ## Features
 
 ### Core Triage
+
 - **Single ticket triage** — paste a ticket, get instant classification
 - **Bulk triage** — process multiple tickets at once with concurrent LLM calls (semaphore-limited to 5)
 - **A/B prompt testing** — compare two prompt versions side by side on the same ticket
 - **Expandable detail views** — click any bulk result to see full model details, cost, latency, draft reply, entities
 
 ### Classification Output
+
 - **Priority**: critical, high, medium, low
 - **Category**: billing, technical, account, shipping, cancellation, refund, product, general
 - **Severity**: cosmetic, minor, major, critical
@@ -170,6 +172,7 @@ User Input → Sanitize → Render Prompt → LLM Call → Parse JSON → Valida
 - **Review flag**: marks low-confidence or ambiguous tickets for human review
 
 ### Reliability
+
 - **Circuit breaker** pattern with closed/open/half-open states for each LLM provider
 - **Automatic failover** from primary to fallback model
 - **Tenacity retries** with exponential backoff and jitter
@@ -178,24 +181,28 @@ User Input → Sanitize → Render Prompt → LLM Call → Parse JSON → Valida
 - **Pydantic v2 validation** on every request and response
 
 ### Observability
+
 - **Prometheus metrics**: request count, latency histogram, token usage, cost, error rate, fallback count, schema validation
 - **OpenTelemetry tracing**: distributed traces with GenAI semantic conventions
 - **Real-time dashboard**: live health checks, latency charts, error distribution, token breakdown
 - **Analytics page**: daily volume, category/priority/severity distributions, confidence buckets, feedback summary
 
 ### Escalation Rules
+
 - **Rule engine**: define rules that match on priority + category
 - **4 action types**: notify, escalate, assign, page on-call
 - **Toggle on/off**: enable/disable rules without deleting them
 - **Templates**: pre-built rule templates for common scenarios
 
 ### Data Management
+
 - **History sidebar**: browse, search, and re-triage past tickets
 - **Feedback system**: thumbs up/down on triage results for quality tracking
 - **Export**: download history as CSV or JSON
 - **Bulk delete**: select and delete multiple history items
 
 ### UI/UX
+
 - **Dark/light theme**: system-aware with manual toggle
 - **Responsive design**: works on desktop and mobile
 - **Animations**: fade-in, stagger, smooth transitions
@@ -205,7 +212,7 @@ User Input → Sanitize → Render Prompt → LLM Call → Parse JSON → Valida
 
 ## Project Structure
 
-```
+```text
 oops-llm/
 ├── src/                          # Python backend
 │   ├── api/
@@ -355,7 +362,7 @@ uvicorn src.api.app:app --reload --port 8000
 cd ui && npm run dev
 ```
 
-Open **http://localhost:3000** in your browser.
+Open <http://localhost:3000> in your browser.
 
 ### 4. Run Tests
 
@@ -371,19 +378,19 @@ pytest tests/ -v
 
 All configuration is via environment variables (loaded by pydantic-settings):
 
-| Variable                          | Default                        | Description                                    |
-| --------------------------------- | ------------------------------ | ---------------------------------------------- |
-| `GROQ_API_KEY`                    | —                              | Groq API key                                   |
-| `OPENAI_API_KEY`                  | —                              | OpenAI API key                                 |
-| `ANTHROPIC_API_KEY`               | —                              | Anthropic API key                              |
-| `PRIMARY_MODEL`                   | `groq/openai/gpt-oss-120b`    | Primary LLM model (LiteLLM format)             |
-| `FALLBACK_MODEL`                  | `groq/qwen/qwen3.8-27b`       | Fallback model for circuit breaker failover    |
-| `ACTIVE_PROMPT_VERSION`           | `v1`                           | Which prompt YAML to use                       |
-| `MAX_INPUT_TOKENS`                | `4096`                         | Max input token limit                          |
-| `LLM_TIMEOUT`                     | `30`                           | LLM request timeout (seconds)                  |
-| `CIRCUIT_BREAKER_FAILURE_THRESHOLD` | `5`                          | Failures before circuit opens                  |
-| `CIRCUIT_BREAKER_RECOVERY_TIMEOUT`  | `30.0`                       | Seconds before half-open retry                 |
-| `APP_VERSION`                     | `0.1.0`                        | Displayed in health endpoint                   |
+| Variable | Default | Description |
+| --- | --- | --- |
+| `GROQ_API_KEY` | — | Groq API key |
+| `OPENAI_API_KEY` | — | OpenAI API key |
+| `ANTHROPIC_API_KEY` | — | Anthropic API key |
+| `PRIMARY_MODEL` | `groq/openai/gpt-oss-120b` | Primary LLM model (LiteLLM format) |
+| `FALLBACK_MODEL` | `groq/qwen/qwen3.8-27b` | Fallback model for circuit breaker failover |
+| `ACTIVE_PROMPT_VERSION` | `v1` | Which prompt YAML to use |
+| `MAX_INPUT_TOKENS` | `4096` | Max input token limit |
+| `LLM_TIMEOUT` | `30` | LLM request timeout (seconds) |
+| `CIRCUIT_BREAKER_FAILURE_THRESHOLD` | `5` | Failures before circuit opens |
+| `CIRCUIT_BREAKER_RECOVERY_TIMEOUT` | `30.0` | Seconds before half-open retry |
+| `APP_VERSION` | `0.1.0` | Displayed in health endpoint |
 
 ---
 
@@ -408,6 +415,7 @@ All endpoints are prefixed with the backend base URL (default `http://localhost:
 | POST   | `/api/v1/ab-test`     | Compare two prompt versions on one ticket            |
 
 **POST /api/v1/triage** — Request:
+
 ```json
 {
   "ticket_text": "I was charged twice for my subscription...",
@@ -416,6 +424,7 @@ All endpoints are prefixed with the backend base URL (default `http://localhost:
 ```
 
 Response:
+
 ```json
 {
   "result": {
@@ -486,7 +495,9 @@ Response:
 ## Frontend Pages
 
 ### Triage Demo (`/`)
+
 The main page. Paste a support ticket and get instant AI classification. Features:
+
 - **Single mode**: one ticket at a time with full result card (model, latency, cost, tokens, confidence bar, product area, entities, summary, draft reply, feedback)
 - **Bulk mode**: paste multiple tickets (one per line, auto-numbered), process all at once, click any result to drill down into full details
 - **Example tickets**: 5 pre-built examples — click to use (appends in bulk mode)
@@ -494,14 +505,18 @@ The main page. Paste a support ticket and get instant AI classification. Feature
 - **Export**: download history as CSV or JSON
 
 ### Dashboard (`/dashboard`)
+
 Real-time operations monitoring:
+
 - Service health & readiness status with live indicators
 - Auto-refresh every 5 seconds (toggleable)
 - Key metrics: total requests, errors, cost, tokens, fallbacks, schema validity
 - Charts: latency over time (area), requests by model (bar), error distribution (pie), token usage, request status
 
 ### Analytics (`/analytics`)
+
 Deep dive into triage performance:
+
 - KPIs: P50/P95 latency, cost per ticket, accuracy (from feedback)
 - Daily volume trend
 - Category, priority, severity, customer intent distributions
@@ -510,7 +525,9 @@ Deep dive into triage performance:
 - Feedback summary (thumbs up vs down)
 
 ### Rules (`/rules`)
+
 Escalation rule management:
+
 - Create rules matching on priority + category
 - 4 action types: notify, escalate, assign, page on-call
 - Quick-start templates for common scenarios
@@ -518,7 +535,9 @@ Escalation rule management:
 - "How it works" guide with step-by-step explanation
 
 ### A/B Test (`/ab-test`)
+
 Compare prompt versions head-to-head:
+
 - Send the same ticket to two different prompt versions (v1 standard vs v2 chain-of-thought)
 - Side-by-side result comparison
 - Quick comparison hints: which version has higher confidence, is faster, or cheaper
@@ -542,9 +561,11 @@ Interactive user guide with collapsible sections:
 Prompts are versioned YAML files in `prompts/triage/`:
 
 ### v1 — Standard (Temperature 0.0)
+
 Direct classification prompt. Fast, deterministic, cost-effective. Best for straightforward tickets.
 
 ### v2 — Chain-of-Thought (Temperature 0.2)
+
 Step-by-step reasoning prompt. More accurate on complex/ambiguous tickets, but uses more tokens and is slightly slower.
 
 ### YAML Structure
@@ -575,10 +596,12 @@ The eval harness tests prompt quality against a golden set of labeled examples.
 ### Golden Set
 
 Located in `data/golden_set/`:
+
 - `dev.jsonl` — development set for iterating on prompts
 - `test.jsonl` — held-out test set for final evaluation
 
 Each line is a JSON object:
+
 ```json
 {
   "ticket_text": "I was charged twice...",
@@ -601,6 +624,7 @@ python scripts/compare_eval.py --baseline results/baseline.json --current result
 ```
 
 ### Eval Metrics
+
 - **Accuracy by field**: exact match rate for category, priority, severity, customer_intent
 - **Overall accuracy**: average across all fields
 - **Schema valid rate**: percentage of responses that parsed correctly
@@ -610,7 +634,7 @@ python scripts/compare_eval.py --baseline results/baseline.json --current result
 
 ---
 
-## Observability
+## Observability Stack
 
 ### Prometheus Metrics
 
@@ -629,6 +653,7 @@ Available at `GET /metrics`:
 ### OpenTelemetry Tracing
 
 Spans follow GenAI semantic conventions:
+
 - `triage.request` — full request lifecycle
 - `llm.completion` — LLM API call
 - `input.sanitization` — injection check
@@ -647,7 +672,7 @@ The Docker Compose stack includes Grafana pre-configured to scrape Prometheus. A
 
 Each LLM provider (primary + fallback) has its own circuit breaker:
 
-```
+```text
 CLOSED (normal) ──[N failures]──▶ OPEN (reject all)
        ▲                              │
        │                    [recovery timeout]
@@ -664,6 +689,7 @@ CLOSED (normal) ──[N failures]──▶ OPEN (reject all)
 ### Retry Strategy
 
 Tenacity retries with exponential backoff + jitter:
+
 - Max 3 attempts
 - Wait: 1–4 seconds with random jitter
 - Retries on: timeout, rate limit, server error
@@ -671,7 +697,7 @@ Tenacity retries with exponential backoff + jitter:
 
 ### Failover Flow
 
-```
+```text
 Request → Primary Model
             │
         [success] → Return
@@ -705,18 +731,19 @@ pytest tests/unit/test_api.py -v
 pytest tests/ --cov=src --cov-report=html
 ```
 
-| Test File                    | Tests | Coverage Area                           |
-| ---------------------------- | ----- | --------------------------------------- |
-| `test_api.py`                | 25    | FastAPI endpoints (health, history, rules, export, triage validation) |
-| `test_database.py`           | 28    | SQLite CRUD, analytics queries, export  |
-| `test_request_schemas.py`    | 25    | Pydantic request validation             |
-| `test_schemas.py`            | —     | Response schema validation              |
-| `test_sanitization.py`       | 13    | Prompt injection protection             |
-| `test_eval_harness.py`       | 11    | Golden set loading, percentile calc     |
-| `test_prompt_registry.py`    | —     | YAML loading, Jinja2 rendering          |
-| `test_circuit_breaker.py`    | —     | State transitions, thread safety        |
+| Test File | Tests | Coverage Area |
+| --- | --- | --- |
+| `test_api.py` | 25 | FastAPI endpoints (health, history, rules, export, triage validation) |
+| `test_database.py` | 28 | SQLite CRUD, analytics queries, export |
+| `test_request_schemas.py` | 25 | Pydantic request validation |
+| `test_schemas.py` | — | Response schema validation |
+| `test_sanitization.py` | 13 | Prompt injection protection |
+| `test_eval_harness.py` | 11 | Golden set loading, percentile calc |
+| `test_prompt_registry.py` | — | YAML loading, Jinja2 rendering |
+| `test_circuit_breaker.py` | — | State transitions, thread safety |
 
 Tests use:
+
 - `pytest-asyncio` with `asyncio_mode = "auto"`
 - `httpx.ASGITransport` for in-process API testing (no server needed)
 - `unittest.mock` for isolating LLM calls
@@ -743,6 +770,7 @@ docker-compose up -d
 ```
 
 Services:
+
 - **app** (port 8000) — FastAPI backend + static frontend
 - **prometheus** (port 9090) — metrics collection
 - **grafana** (port 3001) — dashboards
