@@ -329,24 +329,45 @@ cd ..
 cp .env.example .env
 ```
 
-Edit `.env` with your API key and model:
+Edit `.env` with your API key and model. **Never commit your `.env` file — it is gitignored by default.**
+
+#### Where to get API keys
+
+| Provider | Sign up | Key location |
+| --- | --- | --- |
+| **Groq** (free tier available) | [console.groq.com](https://console.groq.com) | Dashboard > API Keys > Create |
+| **OpenAI** | [platform.openai.com](https://platform.openai.com) | Settings > API Keys |
+| **Anthropic** | [console.anthropic.com](https://console.anthropic.com) | Settings > API Keys |
+
+You only need **one** provider. Groq is recommended — it has a free tier and fast inference.
+
+#### Example `.env` configuration
 
 ```env
-# LLM Provider — use any LiteLLM-compatible provider
-GROQ_API_KEY=gsk_your_key_here
+# Pick ONE provider and set its key:
+
+# Option 1: Groq (recommended — free tier)
+GROQ_API_KEY=your_groq_api_key_here
 PRIMARY_MODEL=groq/openai/gpt-oss-120b
 FALLBACK_MODEL=groq/qwen/qwen3.8-27b
 
-# Or use OpenAI
-# OPENAI_API_KEY=sk-your-key
+# Option 2: OpenAI
+# OPENAI_API_KEY=your_openai_api_key_here
 # PRIMARY_MODEL=gpt-4o
 # FALLBACK_MODEL=gpt-4o-mini
 
-# Or Anthropic
-# ANTHROPIC_API_KEY=sk-ant-your-key
+# Option 3: Anthropic
+# ANTHROPIC_API_KEY=your_anthropic_api_key_here
 # PRIMARY_MODEL=claude-sonnet-4-20250514
 # FALLBACK_MODEL=claude-haiku-4-20250414
 ```
+
+> **Security tips:**
+>
+> - Never share your API keys publicly or commit them to git.
+> - The `.env` file is listed in `.gitignore` — do not remove it from there.
+> - If a key is accidentally exposed, revoke it immediately from the provider's dashboard and generate a new one.
+> - Use `.env.example` as a reference template — it contains only placeholder values.
 
 ### 3. Run
 
@@ -376,7 +397,8 @@ pytest tests/ -v
 
 ## Configuration
 
-All configuration is via environment variables (loaded by pydantic-settings):
+All configuration is via environment variables (loaded by pydantic-settings from your `.env` file).
+API keys are **secrets** — store them only in `.env`, never in source code or commits:
 
 | Variable | Default | Description |
 | --- | --- | --- |
