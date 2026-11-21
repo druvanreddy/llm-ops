@@ -6,17 +6,33 @@ A production-grade **LLM Operations platform** for automated support ticket tria
 
 ## Screenshots
 
-| Triage — AI Classification | Triage — Full Result Details |
-|:---:|:---:|
-| ![Triage Result](images/1-triage-result.png) | ![Triage Details](images/2-triage-details.png) |
+### Triage — AI Classification
 
-| Dashboard — Real-time Monitoring | Analytics — Charts & Stats |
-|:---:|:---:|
-| ![Dashboard](images/3-dashboard.png) | ![Analytics](images/4-analytics.png) |
+![Triage Result](images/1-triage-result.png)
 
-| Escalation Rules | A/B Prompt Testing | User Manual |
-|:---:|:---:|:---:|
-| ![Rules](images/5-rules.png) | ![A/B Test](images/6-ab-test.png) | ![Manual](images/7-manual.png) |
+### Triage — Full Result Details
+
+![Triage Details](images/2-triage-details.png)
+
+### Dashboard — Real-time Monitoring
+
+![Dashboard](images/3-dashboard.png)
+
+### Analytics — Charts & Stats
+
+![Analytics](images/4-analytics.png)
+
+### Rules — Escalation Management
+
+![Rules](images/5-rules.png)
+
+### A/B Prompt Testing
+
+![A/B Test](images/6-ab-test.png)
+
+### User Manual
+
+![Manual](images/7-manual.png)
 
 ---
 
